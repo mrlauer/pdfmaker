@@ -21,7 +21,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	data := map[string]string { "text" : "Ohai there!" }
+	fonts := textproc.ListFontFamilies()
+	data := map[string]interface{} { "text" : "Ohai there!", "fonts" : fonts }
 	header.Set("Content-Type", "text/html")
 	err = templ.Execute(w, data)
 	if err != nil {
