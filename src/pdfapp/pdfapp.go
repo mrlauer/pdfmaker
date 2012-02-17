@@ -8,10 +8,26 @@ import(
 	"os/exec"
 	"path"
 	"path/filepath"
+	"html/template"
 )
 
+var TemplateDir string
+
 func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Ohai")
+	templatePath := path.Join(TemplateDir, "main.html")
+	templ, err := template.ParseFiles(templatePath)
+	header := w.Header()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	data := map[string]string { "text" : "Ohai there!" }
+	header.Set("Content-Type", "text/html")
+	err = templ.Execute(w, data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func pdfhandler(w http.ResponseWriter, r *http.Request) {
@@ -37,6 +53,8 @@ func GetAppDir() string {
 }
 
 func main() {
+	appdir := GetAppDir()
+	TemplateDir = path.Join(appdir, "../templates")
 	http.HandleFunc("/pdf", pdfhandler)
 	http.HandleFunc("/", handler)
 	fmt.Printf("listening on localhost:8080\n")
