@@ -4,6 +4,10 @@ import(
 	"net/http"
 	"fmt"
 	"textproc"
+	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -17,6 +21,19 @@ func pdfhandler(w http.ResponseWriter, r *http.Request) {
 	props := textproc.TypesettingProps{Fontname:"Adobe Garamond Pro", Fontsize:12.0, Baselineskip:15.0}
 	pdf.WriteAt("Ohai there", props, 10.0, 15.0)
 	pdf.Close()
+}
+
+func GetAppDir() string {
+	apppath, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		panic(err)
+	}
+	apppath, err = filepath.Abs(apppath)
+	if err != nil {
+		panic(err)
+	}
+	dir, _ := path.Split(apppath)
+	return dir
 }
 
 func main() {

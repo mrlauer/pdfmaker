@@ -1,11 +1,8 @@
 package textproc
 
 /*
-#cgo CFLAGS: -I/usr/local/include/pango-1.0 -I/usr/X11/include/cairo
-#cgo CFLAGS: -I/usr/local/include/glib-2.0
-#cgo CFLAGS: -I/usr/local/Cellar/glib/2.30.2/lib/glib-2.0/include
-#cgo LDFLAGS: -L/usr/local/lib -L/usr/X11/lib -L/usr/local/Cellar/cairo/1.10.2/lib
-#cgo LDFLAGS: -lcairo -lpango-1.0 -lpangocairo-1.0 -lgobject-2.0 -lglib-2.0
+#cgo pkg-config: cairo
+#cgo pkg-config: pango pangocairo
 #include <stdlib.h>
 #include <cairo.h>
 #include <cairo-pdf.h>
