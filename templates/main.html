@@ -9,11 +9,3 @@
         {{ template "Content" . }}
     </body>
 </html>
-
-{{ define "Content" }}
-<label for="fonts">Fonts</label>
-<select id="fonts">
-    {{ range .fonts }}<option>{{ . }}</option>{{ end }}
-</select>
-
-{{ end }}

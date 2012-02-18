@@ -1,0 +1,9 @@
+{{ define "Content" }}
+<div>
+<label for="fonts">Fonts</label>
+<select id="fonts">
+    {{ range .fonts }}<option>{{ . }}</option>{{ end }}
+</select>
+</div>
+{{ end }}
+

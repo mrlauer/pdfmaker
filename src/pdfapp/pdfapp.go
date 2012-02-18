@@ -15,7 +15,8 @@ var TemplateDir string
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	templatePath := path.Join(TemplateDir, "main.html")
-	templ, err := template.ParseFiles(templatePath)
+	contentPath := path.Join(TemplateDir, "content.html")
+	templ, err := template.ParseFiles(templatePath, contentPath)
 	header := w.Header()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
