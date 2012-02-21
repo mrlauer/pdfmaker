@@ -3,41 +3,37 @@ import platform
 import glob
 from SCons.Script import *
 
-def _go_generator(source, target, env, for_signature):
-    """
-    Generator for go actions.
-    Get the name from the basename of the target.
-    TODO: this needs to handle nested paths.
-    """
-    path = os.path.basename(str(target[0]))
-    t, _ = os.path.splitext(path)
-    return "$GOINSTALL $GOINSTALLFLAGS %s" % t
+def _findSrc(gopath, name):
+    for path in gopath.split(':'):
+        candidate = os.path.join(path, 'src', name)
+        if os.path.exists(candidate):
+            return candidate, path
+    return None, None
+
+def _first(gopath):
+    return gopath.split(':')[0]
+
+def _goinstall(env, out, suffix, name, deps):
+    # get the gopath
+    gopath = env['ENV']['GOPATH']
+    # TODO: handle lists
+    sourcedir, srcgopath = _findSrc(gopath, name)
+    files = glob.glob(os.path.join(sourcedir, '*.go'))
+    files += glob.glob(os.path.join(sourcedir, '*.c'))
+    if deps:
+        files += deps
+    target = os.path.join(_first(gopath), out, name + suffix)
+    cmds = ["$GOINSTALL $GOINSTALLFLAGS %s" % name ]
+    #cmds += [Move(target, os.path.join(srcgopath, out, name + suffix))]
+    return env.Command(action = cmds, target = target, source = files)
 
 def GoInstall(env, name, deps = None):
-    # get the gopath
-    gopath = env['ENV']['GOPATH']
-    # TODO: handle lists
-    sourcedir = os.path.join(gopath, 'src', name)
-    files = glob.glob(os.path.join(sourcedir, '*.go'))
-    files += glob.glob(os.path.join(sourcedir, '*.c'))
-    if deps:
-        files += deps
-    target = os.path.join(gopath, 'bin', name + env.subst('$PROGSUFFIX'))
-    return env._GoInstall(target = target, source = files)
+    return _goinstall(env, 'bin', env.subst('$PROGSUFFIX'), name, deps)
 
 def GoInstallPkg(env, name, deps = None):
-    # get the gopath
-    gopath = env['ENV']['GOPATH']
-    # TODO: handle lists
-    sourcedir = os.path.join(gopath, 'src', name)
-    files = glob.glob(os.path.join(sourcedir, '*.go'))
-    files += glob.glob(os.path.join(sourcedir, '*.c'))
-    if deps:
-        files += deps
     pkgdir = env.subst('${GOOS}_${GOARCH}')
-    target = os.path.join(gopath, 'pkg', 
-            pkgdir, name + env.subst('$LIBSUFFIX'))
-    return env._GoInstall(target = target, source = files)
+    pkg = os.path.join('pkg', pkgdir)
+    return _goinstall(env, pkg, env.subst('$LIBSUFFIX'), name, deps)
 
 def generate(env):
     # figure out the environment
@@ -63,9 +59,6 @@ def generate(env):
 
     env.SetDefault(GOINSTALL = 'go install')
     
-    goinstall = Builder(
-            generator = _go_generator)
-    env.Append(BUILDERS = { '_GoInstall' : goinstall})
     env.AddMethod(GoInstall)
     env.AddMethod(GoInstallPkg)
 

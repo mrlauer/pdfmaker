@@ -1,0 +1,9 @@
+Import('env')
+
+env = env.Clone()
+thisDir = Dir('.').abspath
+env.PrependENVPath('GOPATH', thisDir)
+
+textproc = env.GoInstallPkg('textproc')
+exe = env.GoInstall('pdfapp', textproc)
+Install(env.subst('$BINDIR'), exe)
