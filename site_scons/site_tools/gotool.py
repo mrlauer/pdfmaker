@@ -11,7 +11,7 @@ def _go_generator(source, target, env, for_signature):
     """
     path = os.path.basename(str(target[0]))
     t, _ = os.path.splitext(path)
-    return "$GOINSTALL %s" % t
+    return "$GOINSTALL $GOINSTALLFLAGS %s" % t
 
 def GoInstall(env, name, deps = None):
     # get the gopath
