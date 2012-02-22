@@ -1,0 +1,10 @@
+import os
+
+Import('env')
+
+scriptdir = os.path.join(env.subst('$STATICDIR'), 'scripts')
+
+env.InstallJS(scriptdir, 
+        Split('''scripts/main.coffee
+            scripts/lib/jquery-1.6.1.min.js'''), 
+        sourcedir = 'scripts')

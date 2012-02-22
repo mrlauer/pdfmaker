@@ -6,10 +6,11 @@ env.PrependENVPath('GOPATH', gopath)
 env.PrependENVPath('PATH', ['/usr/local/bin', '/opt/node/bin'])
 bindir = Dir('bin').abspath
 env.SetDefault(BINDIR = bindir)
+env.SetDefault(STATICDIR = Dir('static').abspath)
 
 Export('env')
 
 SConscript('gopath/SConscript')
 
 # static files--javascript and whatnot
-env.JSFile('static/scripts/main.js', 'staticsrc/scripts/main.coffee')
+SConscript('staticsrc/SConscript')
