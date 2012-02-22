@@ -1,14 +1,19 @@
 import os.path
 from SCons.Script import *
+import SCons.Util
 
 # Install javascript files
 def InstallJS(env, targetdir, source, sourcedir = None):
     results = []
+    if source is not None and not SCons.Util.is_List(source):
+        source = [source]
     if not sourcedir:
         sourcedir = Dir('.').abspath
     for f in source:
         rel = os.path.relpath(str(f), sourcedir)
         target = os.path.join(targetdir, rel)
+        base, ext = os.path.splitext(target)
+        target = base + '.js'
         results += env._InstallJS(target, f)
 
 def generate(env):

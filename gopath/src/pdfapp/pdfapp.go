@@ -9,9 +9,11 @@ import(
 	"path"
 	"path/filepath"
 	"html/template"
+	"regexp"
 )
 
 var TemplateDir string
+var StaticDir string
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	templatePath := path.Join(TemplateDir, "main.html")
@@ -41,6 +43,13 @@ func pdfhandler(w http.ResponseWriter, r *http.Request) {
 	pdf.Close()
 }
 
+func staticHandler(w http.ResponseWriter, r *http.Request) {
+	re := regexp.MustCompile(`/static/(.*)`)
+	filename:= re.FindStringSubmatch(r.URL.Path)[1]
+	fmt.Printf("serving %s\n", path.Join(StaticDir, filename))
+	http.ServeFile(w, r, path.Join(StaticDir, filename))
+}
+
 func GetAppDir() string {
 	apppath, err := exec.LookPath(os.Args[0])
 	if err != nil {
@@ -57,7 +66,9 @@ func GetAppDir() string {
 func main() {
 	appdir := GetAppDir()
 	TemplateDir = path.Join(appdir, "../templates")
+	StaticDir = path.Join(appdir, "../static")
 	http.HandleFunc("/pdf", pdfhandler)
+	http.HandleFunc("/static/", staticHandler)
 	http.HandleFunc("/", handler)
 	fmt.Printf("listening on localhost:8080\n")
 	http.ListenAndServe(":8080", nil)
