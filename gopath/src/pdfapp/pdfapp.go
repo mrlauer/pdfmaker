@@ -1,15 +1,16 @@
 package main
 
-import(
-	"net/http"
+import (
 	"fmt"
-	"textproc"
+	"html/template"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
-	"html/template"
 	"regexp"
+	"sort"
+	"textproc"
 )
 
 var TemplateDir string
@@ -25,7 +26,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fonts := textproc.ListFontFamilies()
-	data := map[string]interface{} { "text" : "Ohai there!", "fonts" : fonts }
+	sort.Strings(fonts)
+	data := map[string]interface{}{"text": "Ohai there!", "fonts": fonts}
 	header.Set("Content-Type", "text/html")
 	err = templ.Execute(w, data)
 	if err != nil {
@@ -39,17 +41,23 @@ func pdfhandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	text := r.Form.Get("text")
 	font := r.Form.Get("font")
+	fontsz := 12.0
+	topmargin := 72.0
+	leftmargin := 72.0
 
 	header.Set("Content-Type", "application/pdf")
-	pdf := textproc.MakePDFStreamTextObject(w, 8.5 * 72, 11 * 72)
-	props := textproc.TypesettingProps{Fontname:font, Fontsize:12.0, Baselineskip:15.0}
-	pdf.WriteAt(text, props, 10.0, 15.0)
+	pdf := textproc.MakePDFStreamTextObject(w, 8.5*72, 11*72)
+	props := textproc.TypesettingProps{Fontname: font, Fontsize: 12.0, Baselineskip: 15.0}
+	props.PageWidth = 72.0 * 8.5
+	props.LeftMargin = leftmargin
+	props.RightMargin = leftmargin
+	pdf.WriteAt(text, props, leftmargin, topmargin+fontsz)
 	pdf.Close()
 }
 
 func staticHandler(w http.ResponseWriter, r *http.Request) {
 	re := regexp.MustCompile(`/static/(.*)`)
-	filename:= re.FindStringSubmatch(r.URL.Path)[1]
+	filename := re.FindStringSubmatch(r.URL.Path)[1]
 	http.ServeFile(w, r, path.Join(StaticDir, filename))
 }
 

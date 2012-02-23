@@ -23,9 +23,10 @@ cairo_surface_t *	gocairo_pdf_surface_create_for_stream (
 */
 import "C"
 
-import(
-	"unsafe"
+import (
+	"fmt"
 	"io"
+	"unsafe"
 )
 
 // Return a list of available fonts
@@ -53,10 +54,17 @@ func GoWriteToStream(closure unsafe.Pointer, data *C.char, length C.uint) C.cair
 	return C.cairo_status_t(0)
 }
 
+// All values are in POINTS
 type TypesettingProps struct {
-	Fontname string
-	Fontsize float64
+	Fontname     string
+	Fontsize     float64
 	Baselineskip float64
+	TopMargin    float64
+	LeftMargin   float64
+	BottomMargin float64
+	RightMargin  float64
+	PageWidth    float64
+	PageHeight   float64
 }
 
 type TextObject interface {
@@ -82,6 +90,10 @@ func (t *PDFStreamTextObject) WriteAt(text string, props TypesettingProps, x flo
 
 	layout = C.pango_cairo_create_layout(t.context)
 	C.pango_layout_set_font_description(layout, font_description)
+	width := props.PageWidth - props.LeftMargin - props.RightMargin
+	fmt.Printf("width is %f\n", width)
+	C.pango_layout_set_width(layout, C.int(width*C.PANGO_SCALE))
+	C.pango_layout_set_justify(layout, C.TRUE)
 	ctext := C.CString(text)
 	defer C.free(unsafe.Pointer(ctext))
 	C.pango_layout_set_text(layout, ctext, -1)
