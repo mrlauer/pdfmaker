@@ -1,9 +1,36 @@
+{{ define "ContentCss" }}
+  <link rel="stylesheet" type="text/css" href="/static/css/content.css" />
+{{ end }}
+{{ define "ContentScripts" }}
+    <script data-main="/static/scripts/pdfmaker.js" src="/static/scripts/lib/require.js"></script>
+{{ end }}
+
 {{ define "Content" }}
 <div>
-<label for="fonts">Fonts</label>
-<select id="fonts">
-    {{ range .fonts }}<option>{{ . }}</option>{{ end }}
-</select>
+<form id="textform" method="post" action="/pdf">
+  <ul class="controls textcontrols">
+    <li>
+      <label for="fonts">Fonts</label>
+      <select id="fonts" name="font">
+          {{ range .fonts }}<option>{{ . }}</option>{{ end }}
+      </select>
+    </li>
+    <li>
+      <label for="leftmargin">Left Margin</label>
+      <input id="leftmargin" type="text" value="1" name="leftmargin"></input>
+    </li>
+    <li>
+      <label for="leftmargin">Right Margin</label>
+      <input type="text" value="1" name="rightmargin"></input>
+    </li>
+    <li>
+      <textarea id="text" name="text">Lorem Ipsum Dolior Sunt</textarea>
+    </li>
+    <li>
+      <input type="submit" value="Get PDF"/>
+    </li>
+  </ul>
+</form>
 </div>
 {{ end }}
 

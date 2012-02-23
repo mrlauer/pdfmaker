@@ -36,17 +36,20 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func pdfhandler(w http.ResponseWriter, r *http.Request) {
 	header := w.Header()
+	r.ParseForm()
+	text := r.Form.Get("text")
+	font := r.Form.Get("font")
+
 	header.Set("Content-Type", "application/pdf")
 	pdf := textproc.MakePDFStreamTextObject(w, 8.5 * 72, 11 * 72)
-	props := textproc.TypesettingProps{Fontname:"Adobe Garamond Pro", Fontsize:12.0, Baselineskip:15.0}
-	pdf.WriteAt("Ohai there", props, 10.0, 15.0)
+	props := textproc.TypesettingProps{Fontname:font, Fontsize:12.0, Baselineskip:15.0}
+	pdf.WriteAt(text, props, 10.0, 15.0)
 	pdf.Close()
 }
 
 func staticHandler(w http.ResponseWriter, r *http.Request) {
 	re := regexp.MustCompile(`/static/(.*)`)
 	filename:= re.FindStringSubmatch(r.URL.Path)[1]
-	fmt.Printf("serving %s\n", path.Join(StaticDir, filename))
 	http.ServeFile(w, r, path.Join(StaticDir, filename))
 }
 

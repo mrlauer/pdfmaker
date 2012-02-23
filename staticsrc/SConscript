@@ -3,9 +3,9 @@ import os
 Import('env')
 
 scriptdir = os.path.join(env.subst('$STATICDIR'), 'scripts')
+cssdir = os.path.join(env.subst('$STATICDIR'), 'css')
 
-env.InstallJS(scriptdir, 
-        Split('''scripts/main.coffee
-            scripts/lib/jquery-1.6.1.min.js
-            scripts/lib/require.js'''), 
-        sourcedir = 'scripts')
+Export('scriptdir', 'cssdir')
+
+SConscript('scripts/SConscript')
+SConscript('css/SConscript')

@@ -1,0 +1,14 @@
+body {
+    font-family: Palatino, serif;
+}
+
+ul.controls {
+    list-style-type: none;
+    padding-left:0;
+}
+
+ul.textcontrols label {
+    display:inline-block;
+    width:8em;
+}
+
