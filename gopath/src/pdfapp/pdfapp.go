@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"textproc"
 )
 
@@ -62,7 +63,7 @@ type Document struct {
 	Text        string
 	LeftMargin  float64
 	RightMargin float64
-	Id          int `json:"id"`
+	Id          int `json:"id,omitempty"`
 }
 
 func writeDoc(w http.ResponseWriter, doc *Document) {
@@ -85,6 +86,15 @@ func docHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%d\n", doc.Id)
 	fmt.Printf("%g\n", doc.LeftMargin)
 	fmt.Printf("%s\n", doc.Font)
+
+	if id != "" {
+		if id64, err := strconv.ParseInt(id, 10, 32); err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		} else {
+			doc.Id = int(id64)
+		}
+	}
 
 	switch r.Method {
 	case "POST":

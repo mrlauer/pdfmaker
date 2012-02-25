@@ -6,7 +6,7 @@ require.config
     priority : [ 'jquery', 'underscore', 'backbone']
 
 #syntax looks funny, i know
-require [ 'jquery', 'underscore', 'backbone' ], -> $ ->
+require [ 'jquery', 'order!underscore', 'order!backbone' ], -> $ ->
     class Document extends Backbone.Model
         initialize: (args) ->
             @id = args?.id
@@ -36,7 +36,7 @@ require [ 'jquery', 'underscore', 'backbone' ], -> $ ->
 
         events: { 'change #text' : 'changeText' }
 
-    model = new Document { id:  42 }
+    model = new Document
     model.fetch()
     doc_view = new DocView { model: model }
 
