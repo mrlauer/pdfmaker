@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -55,6 +56,48 @@ func pdfhandler(w http.ResponseWriter, r *http.Request) {
 	pdf.Close()
 }
 
+// TODO: use a database, you moron!
+type Document struct {
+	Font        string
+	Text        string
+	LeftMargin  float64
+	RightMargin float64
+	Id          int `json:"id"`
+}
+
+func writeDoc(w http.ResponseWriter, doc *Document) {
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(doc)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+}
+
+func docHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("%s %s\n", r.Method, r.URL.Path)
+	re := regexp.MustCompile(`/\w*(/(\w+))?/?`)
+	id := re.FindStringSubmatch(r.URL.Path)[2]
+	fmt.Printf("id = %s\n", id)
+
+	doc := Document{}
+	json.NewDecoder(r.Body).Decode(&doc)
+	fmt.Printf("%d\n", doc.Id)
+	fmt.Printf("%g\n", doc.LeftMargin)
+	fmt.Printf("%s\n", doc.Font)
+
+	switch r.Method {
+	case "POST":
+		doc.Id = 37
+		writeDoc(w, &doc)
+	case "GET":
+		writeDoc(w, &doc)
+	case "PUT":
+		writeDoc(w, &doc)
+	}
+
+}
+
 func staticHandler(w http.ResponseWriter, r *http.Request) {
 	re := regexp.MustCompile(`/static/(.*)`)
 	filename := re.FindStringSubmatch(r.URL.Path)[1]
@@ -81,6 +124,7 @@ func main() {
 	http.HandleFunc("/pdf", pdfhandler)
 	http.HandleFunc("/static/", staticHandler)
 	http.HandleFunc("/", handler)
+	http.HandleFunc("/document/", docHandler)
 	fmt.Printf("listening on localhost:8080\n")
 	http.ListenAndServe(":8080", nil)
 }
