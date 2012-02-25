@@ -3,10 +3,17 @@ require.config
         jquery : 'lib/jquery-1.6.1.min'
         backbone : 'lib/backbone'
         underscore : 'lib/underscore'
+        mustache : 'lib/requirejs.mustache'
     priority : [ 'jquery', 'underscore', 'backbone']
 
 #syntax looks funny, i know
-require [ 'jquery', 'order!underscore', 'order!backbone' ], -> $ ->
+require [ 'mustache', 'order!jquery', 'order!underscore', 'order!backbone' ],
+  (mustache) -> $ ->
+    
+    docTempl = """<textarea id="text" name="text">{{text}}</textarea>"""
+        
+    doc_view = null
+
     class Document extends Backbone.Model
         initialize: (args) ->
             @id = args?.id
@@ -27,16 +34,20 @@ require [ 'jquery', 'order!underscore', 'order!backbone' ], -> $ ->
             _.bindAll @
 
             @model = (args?.model) ? new Document
+            @model.on 'change', -> doc_view.render()
 
             @render()
 
         render: ->
+            templ = mustache.render docTempl,
+                text: @model.get 'Text'
+            $('#content-div').html templ
 
         changeText: => @model.save 'Text', $('#text').val()
 
         events: { 'change #text' : 'changeText' }
 
     model = new Document
-    model.fetch()
     doc_view = new DocView { model: model }
+    model.fetch()
 

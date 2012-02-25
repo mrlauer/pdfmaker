@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -57,13 +58,97 @@ func pdfhandler(w http.ResponseWriter, r *http.Request) {
 	pdf.Close()
 }
 
+type Length struct {
+	definition string
+	points     float64
+}
+
+var inchLengthRE *regexp.Regexp
+var pointLengthRE *regexp.Regexp
+
+func init() {
+	inchLengthRE = regexp.MustCompile(`^\s*(\d+(\.\d*)?|\.\d+)\s*("|in)\s*$`)
+	pointLengthRE = regexp.MustCompile(`^\s*(\d+(\.\d*)?|\.\d+)\s*pt\s*$`)
+}
+
+func translateLength(def string) (float64, error) {
+	if match := inchLengthRE.FindStringSubmatch(def); match != nil {
+		l, err := strconv.ParseFloat(match[1], 64)
+		return l * 72.0, err
+	} else if match := pointLengthRE.FindStringSubmatch(def); match != nil {
+		l, err := strconv.ParseFloat(match[1], 64)
+		return l, err
+	}
+	return 0.0, errors.New("Could not parse length")
+}
+
+func LengthFromString(definition string) (Length, error) {
+	points, err := translateLength(definition)
+	if err != nil {
+		return Length{}, err
+	}
+	return Length{definition: definition, points: points}, nil
+}
+
+func LengthFromPoints(points float64) Length {
+	str := strconv.FormatFloat(points, 'g', -1, 64) + "pt"
+	return Length{definition: str, points: points}
+}
+
+func (l Length) String() string {
+	if l.definition == "" {
+		return "0pt"
+	}
+	return l.definition
+}
+
+func (l Length) Points() float64 {
+	return l.points
+}
+
+// implements json marshal/unmarshall
+func (l Length) MarshalJSON() ([]byte, error) {
+	return json.Marshal(l.definition)
+}
+
+func (l *Length) UnmarshalJSON(data []byte) error {
+	var def string
+	err := json.Unmarshal(data, &def)
+	if err == nil {
+		*l, err = LengthFromString(def)
+	}
+	return err
+}
+
 // TODO: use a database, you moron!
+// This is the structure that is translated to/from JS
 type Document struct {
-	Font        string
-	Text        string
-	LeftMargin  float64
-	RightMargin float64
-	Id          int `json:"id,omitempty"`
+	Font         string
+	Text         string
+	FontSize     Length
+	BaselineSkip Length
+	LeftMargin   Length
+	RightMargin  Length
+	TopMargin    Length
+	BottomMargin Length
+	PageHeight   Length
+	PageWidth    Length
+	Id           int `json:"id,omitempty"`
+}
+
+func DefaultDocument() *Document {
+	doc := Document{}
+	doc.Font = "Adobe Garamond Pro"
+	doc.Text = "Lorem Ipsum"
+	doc.FontSize = LengthFromPoints(12)
+	doc.BaselineSkip = LengthFromPoints(15)
+	doc.LeftMargin = LengthFromPoints(72)
+	doc.RightMargin = LengthFromPoints(72)
+	doc.TopMargin = LengthFromPoints(72)
+	doc.BottomMargin = LengthFromPoints(72)
+	doc.PageHeight, _ = LengthFromString(`11in`)
+	doc.PageWidth, _ = LengthFromString(`8.5"`)
+	return &doc
 }
 
 func writeDoc(w http.ResponseWriter, doc *Document) {
@@ -84,10 +169,11 @@ func docHandler(w http.ResponseWriter, r *http.Request) {
 	doc := Document{}
 	json.NewDecoder(r.Body).Decode(&doc)
 	fmt.Printf("%d\n", doc.Id)
-	fmt.Printf("%g\n", doc.LeftMargin)
 	fmt.Printf("%s\n", doc.Font)
+	fmt.Printf("%s %g\n", doc.FontSize, doc.FontSize.Points())
+	fmt.Printf("%s %g\n", doc.PageWidth, doc.PageWidth.Points())
 
-	if id != "" {
+	if !(id == "0" || id == "") {
 		if id64, err := strconv.ParseInt(id, 10, 32); err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
@@ -101,7 +187,12 @@ func docHandler(w http.ResponseWriter, r *http.Request) {
 		doc.Id = 37
 		writeDoc(w, &doc)
 	case "GET":
-		writeDoc(w, &doc)
+		pdoc := &doc
+		if id == "0" || id == "" {
+			// Getting default values
+			pdoc = DefaultDocument()
+		}
+		writeDoc(w, pdoc)
 	case "PUT":
 		writeDoc(w, &doc)
 	}
