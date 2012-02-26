@@ -1,22 +1,12 @@
   <ul class="controls textcontrols">
+    {{#sizeControls}}
     <li>
-      <label for="leftmargin">Left Margin</label>
-      <input id="leftmargin" type="text" value="{{ attr.LeftMargin }}" name="leftmargin"></input>
+        <label for="{{name}}">{{label}}</label>
+        <input id="{{name}}" class="docControl" type="text" value="{{#get}}{{name}}{{/get}}" name="{{name}}"></input>
     </li>
+    {{/sizeControls}}
     <li>
-      <label for="rightmargin">Right Margin</label>
-      <input id="rightmargin" type="text" value="{{ attr.RightMargin }}" name="rightmargin"></input>
-    </li>
-    <li>
-      <label for="pagewidth">Page Width</label>
-      <input id="pagewidth" type="text" value="{{ attr.PageWidth }}" name="pagewidth"></input>
-    </li>
-    <li>
-      <label for="pageheight">Page Height</label>
-      <input id="pageheight" type="text" value="{{ attr.PageHeight }}" name="pageheight"></input>
-    </li>
-    <li>
-    <textarea id="text" name="text">{{ attr.Text }}</textarea>
+    <textarea id="text" name="text">{{#get}}Text{{/get}}</textarea>
     </li>
     <li>
       <input type="submit" value="Get PDF"/>
