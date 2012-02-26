@@ -24,6 +24,16 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!underscore', 
         PageHeight: 'Page Height'
         Text: 'Text'
 
+    sizeControlFields =
+        FontSize : true
+        BaselineSkip : true
+        LeftMargin : true
+        RightMargin : true
+        TopMargin : true
+        BottomMargin : true
+        PageWidth : true
+        PageHeight : true
+
     sizeControls = ({ name: name, label: propertyNames[name] } for name in [
         'FontSize'
         'BaselineSkip'
@@ -40,6 +50,14 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!underscore', 
             @id = args?.id
 
         urlRoot: -> '/document/'
+
+        validate: (attrs) ->
+            sizeRE = /^\s*(\d+(\.\d*)?|\.\d+)\s*("|in|pt)\s*$/
+            for field, val of attrs
+                if field of sizeControlFields
+                    if val? and !sizeRE.test val
+                        return "Bad value for #{field}"
+            return null
 
 
     class DocView extends Backbone.View
@@ -64,7 +82,11 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!underscore', 
             @
 
         changeText: => @model.save 'Text', $('#text').val()
-        changeProp: (prop) => @model.save prop, $("##{prop}").val()
+        changeProp: (prop) =>
+            attrs = {}
+            attrs[prop] = @$("##{prop}").val()
+            @model.save attrs,
+                { error: -> @$("##{prop}").addClass 'error' }
 
         events:
             'change #text' : 'changeText'

@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"textproc"
 )
 
@@ -71,19 +72,30 @@ func init() {
 	pointLengthRE = regexp.MustCompile(`^\s*(\d+(\.\d*)?|\.\d+)\s*pt\s*$`)
 }
 
-func translateLength(def string) (float64, error) {
+// units
+const (
+	_ = iota
+	Points
+	Inches
+	Mils
+	Centimeters
+	Millimeters
+)
+
+func translateLength(def string) (float64, int, error) {
+	def = strings.TrimSpace(def)
 	if match := inchLengthRE.FindStringSubmatch(def); match != nil {
 		l, err := strconv.ParseFloat(match[1], 64)
-		return l * 72.0, err
+		return l * 72.0, Points, err
 	} else if match := pointLengthRE.FindStringSubmatch(def); match != nil {
 		l, err := strconv.ParseFloat(match[1], 64)
-		return l, err
+		return l, Inches, err
 	}
-	return 0.0, errors.New("Could not parse length")
+	return 0.0, Points, errors.New("Could not parse length")
 }
 
 func LengthFromString(definition string) (Length, error) {
-	points, err := translateLength(definition)
+	points, _, err := translateLength(definition)
 	if err != nil {
 		return Length{}, err
 	}

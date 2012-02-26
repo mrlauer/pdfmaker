@@ -12,3 +12,7 @@ ul.textcontrols label {
     width:8em;
 }
 
+.docControl.error {
+    color: red;
+    border-color: red;
+}
