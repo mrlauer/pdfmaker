@@ -3,3 +3,4 @@ Import('env', 'scriptdir')
 env.InstallJS(scriptdir, 
         Glob('*.coffee') + Glob('*.js') + Glob('lib/*.js')
         )
+env.Install(scriptdir, Split('doctempl.html'))
