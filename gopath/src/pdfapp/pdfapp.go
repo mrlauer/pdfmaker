@@ -173,7 +173,6 @@ func DefaultDocument() *Document {
 }
 
 func writeDoc(w http.ResponseWriter, doc *Document) {
-	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(doc)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
