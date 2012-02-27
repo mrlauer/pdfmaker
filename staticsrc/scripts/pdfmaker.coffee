@@ -49,6 +49,8 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!underscore', 
         initialize: (args) ->
             @id = args?.id
 
+        defaults: defaultDoc
+
         urlRoot: -> '/document/'
 
         validate: (attrs) ->
@@ -74,8 +76,8 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!underscore', 
         render: ->
             model = @model
             templ = mustache.render doctempl,
+                fonts: availableFonts
                 sizeControls: sizeControls
-                attr: @model.attributes
                 get: -> (key, render)-> _.escape model.get render key
             $('#content-div').html templ
             $('#Font').val @model.get 'Font'
@@ -92,7 +94,5 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!underscore', 
             'change #text' : 'changeText'
             'change .docControl' : (ev) -> @changeProp $(ev.currentTarget).attr('name')
 
-    model = new Document
-    doc_view = new DocView { model: model }
-    model.fetch()
+    doc_view = new DocView
 

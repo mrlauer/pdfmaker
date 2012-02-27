@@ -1,4 +1,10 @@
   <ul class="controls textcontrols">
+    <li>
+      <label for="Font">Fonts</label>
+      <select id="Font" class="docControl" name="Font">
+          {{#fonts}}<option>{{.}}</option>{{/fonts}}
+      </select>
+    </li>
     {{#sizeControls}}
     <li>
         <label for="{{name}}">{{label}}</label>

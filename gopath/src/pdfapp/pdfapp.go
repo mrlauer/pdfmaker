@@ -31,7 +31,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 	fonts := textproc.ListFontFamilies()
 	sort.Strings(fonts)
-	data := map[string]interface{}{"text": "Ohai there!", "fonts": fonts}
+	defaultDoc := DefaultDocument()
+	defaultDocJSON, err := json.Marshal(defaultDoc)
+	if err != nil {
+		panic(err)
+	}
+	fontsJSON, err := json.Marshal(fonts)
+	if err != nil {
+		panic(err)
+	}
+	data := map[string]interface{}{"fonts": template.JS(fontsJSON), "defaultDoc" : template.JS(defaultDocJSON)}
 	header.Set("Content-Type", "text/html")
 	err = templ.Execute(w, data)
 	if err != nil {
@@ -61,7 +70,7 @@ func pdfhandler(w http.ResponseWriter, r *http.Request) {
 
 type Length struct {
 	definition string
-	points     float64
+	points	   float64
 }
 
 var inchLengthRE *regexp.Regexp
@@ -135,17 +144,17 @@ func (l *Length) UnmarshalJSON(data []byte) error {
 // TODO: use a database, you moron!
 // This is the structure that is translated to/from JS
 type Document struct {
-	Font         string
-	Text         string
-	FontSize     Length
+	Font		 string
+	Text		 string
+	FontSize	 Length
 	BaselineSkip Length
-	LeftMargin   Length
+	LeftMargin	 Length
 	RightMargin  Length
-	TopMargin    Length
+	TopMargin	 Length
 	BottomMargin Length
-	PageHeight   Length
-	PageWidth    Length
-	Id           int `json:"id,omitempty"`
+	PageHeight	 Length
+	PageWidth	 Length
+	Id			 int `json:"id,omitempty"`
 }
 
 func DefaultDocument() *Document {
@@ -176,14 +185,9 @@ func docHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%s %s\n", r.Method, r.URL.Path)
 	re := regexp.MustCompile(`/\w*(/(\w+))?/?`)
 	id := re.FindStringSubmatch(r.URL.Path)[2]
-	fmt.Printf("id = %s\n", id)
 
 	doc := Document{}
 	json.NewDecoder(r.Body).Decode(&doc)
-	fmt.Printf("%d\n", doc.Id)
-	fmt.Printf("%s\n", doc.Font)
-	fmt.Printf("%s %g\n", doc.FontSize, doc.FontSize.Points())
-	fmt.Printf("%s %g\n", doc.PageWidth, doc.PageWidth.Points())
 
 	if !(id == "0" || id == "") {
 		if id64, err := strconv.ParseInt(id, 10, 32); err != nil {

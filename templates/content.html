@@ -2,19 +2,15 @@
   <link rel="stylesheet" type="text/css" href="/static/css/content.css" />
 {{ end }}
 {{ define "ContentScripts" }}
+    <script id="script-defaults">
+      var availableFonts = {{ .fonts }};
+      var defaultDoc = {{ .defaultDoc }};
+    </script>
     <script data-main="/static/scripts/pdfmaker.js" src="/static/scripts/lib/require.js"></script>
 {{ end }}
 
 {{ define "Content" }}
 <div>
-  <ul class="controls textcontrols">
-    <li>
-      <label for="Font">Fonts</label>
-      <select id="Font" class="docControl" name="Font">
-          {{ range .fonts }}<option>{{ . }}</option>{{ end }}
-      </select>
-    </li>
-  </ul>
   <div id="content-div"></div>
 </div>
 {{ end }}
