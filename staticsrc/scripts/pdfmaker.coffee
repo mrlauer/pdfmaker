@@ -83,7 +83,7 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!underscore', 
             $('#Font').val @model.get 'Font'
             @
 
-        changeText: => @model.save 'Text', $('#text').val()
+        changeText: => @model.save 'Text', $('#Text').val()
         changeProp: (prop) =>
             attrs = {}
             attrs[prop] = @$("##{prop}").val()
@@ -91,7 +91,7 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!underscore', 
                 { error: -> @$("##{prop}").addClass 'error' }
 
         events:
-            'change #text' : 'changeText'
+            'change #Text' : 'changeText'
             'change .docControl' : (ev) -> @changeProp $(ev.currentTarget).attr('name')
 
     doc_view = new DocView

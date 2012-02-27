@@ -16,3 +16,13 @@ ul.textcontrols label {
     color: red;
     border-color: red;
 }
+
+.property-controls {
+    float:right;
+}
+
+.main-text {
+    resize: none;
+    width: 7in;
+    height: 9in;
+}

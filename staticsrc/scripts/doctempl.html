@@ -1,21 +1,20 @@
-  <ul class="controls textcontrols">
-    <li>
-      <label for="Font">Fonts</label>
-      <select id="Font" class="docControl" name="Font">
-          {{#fonts}}<option>{{.}}</option>{{/fonts}}
-      </select>
-    </li>
-    {{#sizeControls}}
-    <li>
-        <label for="{{name}}">{{label}}</label>
-        <input id="{{name}}" class="docControl" type="text" value="{{#get}}{{name}}{{/get}}" name="{{name}}"></input>
-    </li>
-    {{/sizeControls}}
-    <li>
-    <textarea id="text" name="text">{{#get}}Text{{/get}}</textarea>
-    </li>
-    <li>
-      <input type="submit" value="Get PDF"/>
-    </li>
-  </ul>
-
+<div class="controls">
+  <div class="property-controls">
+    <ul class="controls textcontrols">
+      <li>
+        <label for="Font">Fonts</label>
+        <select id="Font" class="docControl" name="Font">
+            {{#fonts}}<option>{{.}}</option>{{/fonts}}
+        </select>
+      </li>
+      {{#sizeControls}}
+      <li>
+          <label for="{{name}}">{{label}}</label>
+          <input id="{{name}}" class="docControl" type="text" value="{{#get}}{{name}}{{/get}}" name="{{name}}"></input>
+      </li>
+      {{/sizeControls}}
+    </ul>
+  </div>
+    <textarea class="main-text" id="Text" name="Text">{{#get}}Text{{/get}}</textarea>
+    <input type="submit" value="Get PDF"/>
+</div>
