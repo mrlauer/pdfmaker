@@ -1,3 +1,4 @@
 Import('env', 'cssdir')
 
 env.Install(cssdir, Split('content.css'))
+env.Install(cssdir, 'jquery-ui')
