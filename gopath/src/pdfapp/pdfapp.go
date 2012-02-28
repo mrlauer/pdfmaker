@@ -13,7 +13,6 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
-	"strings"
 	"textproc"
 )
 
@@ -21,6 +20,8 @@ var TemplateDir string
 var StaticDir string
 
 func handler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("%s %s\n", r.Method, r.URL.Path)
+	fmt.Printf("%s\n", r.Header.Get("Accept"))
 	templatePath := path.Join(TemplateDir, "main.html")
 	contentPath := path.Join(TemplateDir, "content.html")
 	templ, err := template.ParseFiles(templatePath, contentPath)
@@ -73,12 +74,10 @@ type Length struct {
 	points	   float64
 }
 
-var inchLengthRE *regexp.Regexp
-var pointLengthRE *regexp.Regexp
+var lengthRE *regexp.Regexp
 
 func init() {
-	inchLengthRE = regexp.MustCompile(`^\s*(\d+(\.\d*)?|\.\d+)\s*("|in)\s*$`)
-	pointLengthRE = regexp.MustCompile(`^\s*(\d+(\.\d*)?|\.\d+)\s*pt\s*$`)
+	lengthRE = regexp.MustCompile(`^\s*(\d+(\.\d*)?|\.\d+)\s*("|in|pt)\s*$`)
 }
 
 // units
@@ -91,24 +90,71 @@ const (
 	Millimeters
 )
 
-func translateLength(def string) (float64, int, error) {
-	def = strings.TrimSpace(def)
-	if match := inchLengthRE.FindStringSubmatch(def); match != nil {
-		l, err := strconv.ParseFloat(match[1], 64)
-		return l * 72.0, Points, err
-	} else if match := pointLengthRE.FindStringSubmatch(def); match != nil {
-		l, err := strconv.ParseFloat(match[1], 64)
-		return l, Inches, err
+type LengthUnit int
+
+func getUnit(unitStr string) (LengthUnit, error) {
+	switch unitStr {
+	case `"`:
+		return Inches, nil
+	case `in`:
+		return Inches, nil
+	case `mil`:
+		return Mils, nil
+	case `pt`:
+		return Points, nil
+	case `cm`:
+		return Centimeters, nil
+	case `mm`:
+		return Millimeters, nil
 	}
-	return 0.0, Points, errors.New("Could not parse length")
+	fmt.Printf("Invalid unit string %s\n", unitStr)
+	return Points, errors.New("Invalid unit string")
+}
+
+func normalizedUnitString(unitStr string) string {
+	switch unitStr {
+	case `in`:
+		return `"`
+	}
+	return unitStr
+}
+
+func getUnitToPoints(unit LengthUnit) float64 {
+	switch unit {
+	case Inches:
+		return 72.0
+	case Mils:
+		return 0.072
+	case Centimeters:
+		return 72.0 / 2.54
+	case Millimeters:
+		return 72.0 / 25.4
+	}
+	return 1.0
+}
+
+func translateLength(def string) (string, float64, LengthUnit, error) {
+	if match := lengthRE.FindStringSubmatch(def); match != nil {
+		l, err := strconv.ParseFloat(match[1], 64)
+		if err == nil {
+			unitStr := match[3]
+			unit, err := getUnit(unitStr)
+			if err == nil {
+				scale := getUnitToPoints(unit)
+				normalized := match[1] + normalizedUnitString(unitStr)
+				return normalized, l * scale, unit, err
+			}
+		}
+	}
+	return def, 0.0, Points, errors.New("Could not parse length")
 }
 
 func LengthFromString(definition string) (Length, error) {
-	points, _, err := translateLength(definition)
+	normalized, points, _, err := translateLength(definition)
 	if err != nil {
 		return Length{}, err
 	}
-	return Length{definition: definition, points: points}, nil
+	return Length{definition: normalized, points: points}, nil
 }
 
 func LengthFromPoints(points float64) Length {
@@ -183,6 +229,7 @@ func writeDoc(w http.ResponseWriter, doc *Document) {
 
 func docHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%s %s\n", r.Method, r.URL.Path)
+	fmt.Printf("%s\n", r.Header.Get("Accept"))
 	re := regexp.MustCompile(`/\w*(/(\w+))?/?`)
 	id := re.FindStringSubmatch(r.URL.Path)[2]
 

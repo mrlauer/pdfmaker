@@ -85,10 +85,11 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!underscore', 
 
         changeText: => @model.save 'Text', $('#Text').val()
         changeProp: (prop) =>
+            self = @
             attrs = {}
             attrs[prop] = @$("##{prop}").val()
             @model.save attrs,
-                { error: -> @$("##{prop}").addClass 'error' }
+                { error: -> self.$("##{prop}").addClass 'error' }
 
         events:
             'change #Text' : 'changeText'
