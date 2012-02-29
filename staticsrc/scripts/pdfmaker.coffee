@@ -54,10 +54,9 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!underscore', 
         urlRoot: -> '/document/'
 
         validate: (attrs) ->
-            sizeRE = /^\s*(\d+(\.\d*)?|\.\d+)\s*("|in|pt)\s*$/
             for field, val of attrs
                 if field of sizeControlFields
-                    if val? and !sizeRE.test val
+                    if val? and !lengthRE.test val
                         return "Bad value for #{field}"
             return null
 

@@ -20,10 +20,15 @@ type Length struct {
 var lengthRE *regexp.Regexp
 
 func init() {
-	decimalString := `(\d+(?:\.\d*)?|\.\d+)`
-	//fracString := `((?:\d+(?:\s+|-))?\d+/[1-9]\d*)`
+	decimalString := `\d+(?:\.\d*)?|\.\d+`
+	fracString := `(?:\d+(?:\s+|-))?\d+/[1-9]\d*`
 	unitString := `("|in|pt|cm|mm)`
-	lengthRE = regexp.MustCompile(`^\s*` + decimalString + `\s*` + unitString + `\s*$`)
+	lengthREString := `^\s*(` + decimalString + `|` + fracString + `)\s*` + unitString + `\s*$`
+	lengthRE = regexp.MustCompile(lengthREString)
+}
+
+func LengthREString() string {
+	return lengthRE.String()
 }
 
 // an enumeration for unit types.
@@ -87,20 +92,33 @@ func getUnitToPoints(unit LengthUnit) float64 {
 }
 
 // parseFrac parses a "fraction"
-func parseFrac(fracstr string) float64 {
+func parseFrac(fracstr string) (string, float64, error) {
 	re := regexp.MustCompile(`(?:(\d+)(?:\s+|-))?(\d+)/(\d+)`)
 	m := re.FindStringSubmatch(fracstr)
 	if m != nil {
 		f := 0.0
+		normalized := ""
 		if m[1] != "" {
 			f, _ = strconv.ParseFloat(m[1], 64)
+			normalized = m[1] + " "
 		}
 		num, _ := strconv.ParseFloat(m[2], 64)
 		denom, _ := strconv.ParseFloat(m[3], 64)
 		f += num / denom
-		return f
+		normalized += m[2] + "/" + m[3]
+		return normalized, f, nil
 	}
-	return 0.0
+	return fracstr, 0.0, errors.New("Could not parse fraction")
+
+}
+
+// parseLength attempts to parse decimals and fractions
+func parseLength(str string) (string, float64, error) {
+	l, err := strconv.ParseFloat(str, 64)
+	if err == nil {
+		return str, l, nil
+	}
+	return parseFrac(str)
 
 }
 
@@ -111,13 +129,13 @@ func parseFrac(fracstr string) float64 {
 // - an error, in the string is not valid.
 func translateLength(def string) (string, float64, LengthUnit, error) {
 	if match := lengthRE.FindStringSubmatch(def); match != nil {
-		l, err := strconv.ParseFloat(match[1], 64)
+		normalized, l, err := parseLength(match[1])
 		if err == nil {
 			unitStr := match[2]
 			unit, err := getUnit(unitStr)
 			if err == nil {
 				scale := getUnitToPoints(unit)
-				normalized := match[1] + normalizedUnitString(unitStr)
+				normalized += normalizedUnitString(unitStr)
 				return normalized, l * scale, unit, err
 			}
 		}

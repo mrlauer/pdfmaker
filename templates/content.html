@@ -5,6 +5,7 @@
     <script id="script-defaults">
       var availableFonts = {{ .fonts }};
       var defaultDoc = {{ .defaultDoc }};
+      var lengthRE = new RegExp ({{ .lengthRE }});
     </script>
     <script data-main="/static/scripts/pdfmaker.js" src="/static/scripts/lib/require.js"></script>
 {{ end }}

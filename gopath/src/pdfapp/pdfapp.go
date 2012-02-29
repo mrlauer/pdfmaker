@@ -1,10 +1,10 @@
 package main
 
 import (
-	"local/document"
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"local/document"
 	"net/http"
 	"os"
 	"os/exec"
@@ -45,7 +45,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	data := map[string]interface{}{"fonts": template.JS(fontsJSON), "defaultDoc": template.JS(defaultDocJSON)}
+	lengthREString := document.LengthREString()
+	data := map[string]interface{}{"fonts": template.JS(fontsJSON),
+		"defaultDoc": template.JS(defaultDocJSON),
+		"lengthRE":   lengthREString}
 	header.Set("Content-Type", "text/html")
 	err = templ.Execute(w, data)
 	if err != nil {
