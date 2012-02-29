@@ -1,9 +1,10 @@
+// package document encapsulates simple text documents.
 package document
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"encoding/json"
 	"regexp"
 	"strconv"
 )
@@ -19,7 +20,10 @@ type Length struct {
 var lengthRE *regexp.Regexp
 
 func init() {
-	lengthRE = regexp.MustCompile(`^\s*(\d+(\.\d*)?|\.\d+)\s*("|in|pt)\s*$`)
+	decimalString := `(\d+(?:\.\d*)?|\.\d+)`
+	//fracString := `((?:\d+(?:\s+|-))?\d+/[1-9]\d*)`
+	unitString := `("|in|pt|cm|mm)`
+	lengthRE = regexp.MustCompile(`^\s*` + decimalString + `\s*` + unitString + `\s*$`)
 }
 
 // an enumeration for unit types.
@@ -82,6 +86,24 @@ func getUnitToPoints(unit LengthUnit) float64 {
 	return 1.0
 }
 
+// parseFrac parses a "fraction"
+func parseFrac(fracstr string) float64 {
+	re := regexp.MustCompile(`(?:(\d+)(?:\s+|-))?(\d+)/(\d+)`)
+	m := re.FindStringSubmatch(fracstr)
+	if m != nil {
+		f := 0.0
+		if m[1] != "" {
+			f, _ = strconv.ParseFloat(m[1], 64)
+		}
+		num, _ := strconv.ParseFloat(m[2], 64)
+		denom, _ := strconv.ParseFloat(m[3], 64)
+		f += num / denom
+		return f
+	}
+	return 0.0
+
+}
+
 // translateLength takes a length string and returns
 // - a normalized string
 // - the length in points
@@ -91,7 +113,7 @@ func translateLength(def string) (string, float64, LengthUnit, error) {
 	if match := lengthRE.FindStringSubmatch(def); match != nil {
 		l, err := strconv.ParseFloat(match[1], 64)
 		if err == nil {
-			unitStr := match[3]
+			unitStr := match[2]
 			unit, err := getUnit(unitStr)
 			if err == nil {
 				scale := getUnitToPoints(unit)

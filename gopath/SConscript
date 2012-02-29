@@ -8,3 +8,11 @@ textproc = env.GoInstallPkg('textproc')
 document = env.GoInstallPkg('local/document')
 exe = env.GoInstall('pdfapp', [document, textproc])
 Install(env.subst('$BINDIR'), exe)
+
+def PhonyTargets(env = None, **kw):
+     if not env: env = DefaultEnvironment()
+     for target,action in kw.items():
+         env.AlwaysBuild(env.Alias(target, [], action))
+ 
+env.AlwaysBuild(env.Alias('TEST', [], 'go test local/document'))
+
