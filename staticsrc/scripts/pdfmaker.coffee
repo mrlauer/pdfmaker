@@ -1,13 +1,15 @@
 require.config
     paths :
         jquery : 'lib/jquery-1.6.1.min'
+        jqueryui : 'lib/jquery-ui-1.8.13.custom.min'
         backbone : 'lib/backbone'
         underscore : 'lib/underscore'
         mustache : 'lib/requirejs.mustache'
     priority : [ 'jquery', 'underscore', 'backbone']
 
 #syntax looks funny, i know
-require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!underscore', 'order!backbone' ],
+require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!jqueryui',
+        'order!underscore', 'order!backbone' ],
   (mustache, doctempl) -> $ ->
     
     doc_view = null
@@ -53,6 +55,12 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!underscore', 
 
         urlRoot: -> '/document/'
 
+        pdfUrl: ->
+            if @id?
+                "/pdf/#{@id}"
+            else
+                "/pdf/"
+
         validate: (attrs) ->
             for field, val of attrs
                 if field of sizeControlFields
@@ -68,7 +76,11 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!underscore', 
             _.bindAll @
 
             @model = (args?.model) ? new Document
-            @model.on 'change', -> doc_view.render()
+            self = @
+            @model.on 'change', ->
+                self.render()
+                if ! self.model.isNew()
+                    router.navigate "edit/#{self.model.id}"
 
             @render()
 
@@ -78,8 +90,9 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!underscore', 
                 fonts: availableFonts
                 sizeControls: sizeControls
                 get: -> (key, render)-> _.escape model.get render key
-            $('#content-div').html templ
-            $('#Font').val @model.get 'Font'
+            @$('#content-div').html templ
+            @$('#getPdf').button()
+            @$('#Font').val @model.get 'Font'
             @
 
         changeText: => @model.save 'Text', $('#Text').val()
@@ -90,9 +103,34 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!underscore', 
             @model.save attrs,
                 { error: -> self.$("##{prop}").addClass 'error' }
 
+        getPdf: ->
+            model = @model
+            model.save {},
+                success : ->
+                    url = model.pdfUrl()
+                    window.location = url
+
         events:
             'change #Text' : 'changeText'
             'change .docControl' : (ev) -> @changeProp $(ev.currentTarget).attr('name')
+            'click  #getPdf' : 'getPdf'
 
     doc_view = new DocView
+
+    class DocRouter extends Backbone.Router
+        routes:
+            "edit/:id": "edit"
+
+        edit: (idstr)->
+            id = parseInt idstr
+            doc_view = new DocView
+                model : new Document
+                    id : id
+            doc_view.model.fetch()
+
+    router = new DocRouter
+
+    Backbone.history.start( { pushState: true} )
+
+
 

@@ -23,7 +23,13 @@ var TemplateDir string
 var StaticDir string
 
 // handler is the handler for the basic page.
+// It simply redirects to an empty edit page
 func handler(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, `/edit/`, 301)
+}
+
+// editHandler is the handler for showing document edit pages
+func editHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%s %s\n", r.Method, r.URL.Path)
 	fmt.Printf("%s\n", r.Header.Get("Accept"))
 	templatePath := path.Join(TemplateDir, "main.html")
@@ -59,22 +65,38 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 // pdfhandler makes a pdf file out of the information it is passed.
 func pdfhandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("%s %s\n", r.Method, r.URL.Path)
+	fmt.Printf("%s\n", r.Header.Get("Accept"))
 	header := w.Header()
-	r.ParseForm()
-	text := r.Form.Get("text")
-	font := r.Form.Get("font")
-	fontsz := 12.0
-	topmargin := 72.0
-	leftmargin := 72.0
+
+	re := regexp.MustCompile(`/\w*(/(\w+))?/?`)
+	idstr := re.FindStringSubmatch(r.URL.Path)[2]
+	id, err := strconv.ParseInt(idstr, 10, 64)
+	if err != nil {
+		fmt.Printf("could not parse, %s\n", err.Error())
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	doc, err := document.FetchDocument(int(id))
+	if err != nil {
+		fmt.Printf("could not find doc %d, %s\n", id, err.Error())
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
 
 	header.Set("Content-Type", "application/pdf")
+	//header.Set("Content-Disposition", "attachment;filename=foo.pdf")
 	pdf := textproc.MakePDFStreamTextObject(w, 8.5*72, 11*72)
-	props := textproc.TypesettingProps{Fontname: font, Fontsize: 12.0, Baselineskip: 15.0}
-	props.PageWidth = 72.0 * 8.5
-	props.LeftMargin = leftmargin
-	props.RightMargin = leftmargin
-	pdf.WriteAt(text, props, leftmargin, topmargin+fontsz)
-	pdf.Close()
+	defer pdf.Close()
+	props := textproc.TypesettingProps{}
+	props.Fontname = doc.Font
+	props.Fontsize = doc.FontSize.Points()
+	props.Baselineskip = doc.BaselineSkip.Points()
+	props.PageWidth = doc.PageWidth.Points()
+	props.PageHeight = doc.PageHeight.Points()
+	props.LeftMargin = doc.LeftMargin.Points()
+	props.RightMargin = doc.RightMargin.Points()
+	pdf.WriteAt(doc.Text, props, props.LeftMargin, doc.TopMargin.Points()+props.Fontsize)
 }
 
 func writeDoc(w http.ResponseWriter, doc *document.Document) {
@@ -95,8 +117,10 @@ func docHandler(w http.ResponseWriter, r *http.Request) {
 	doc := document.Document{}
 	json.NewDecoder(r.Body).Decode(&doc)
 
+	var id64 int64
 	if !(id == "0" || id == "") {
-		if id64, err := strconv.ParseInt(id, 10, 32); err != nil {
+		var err error
+		if id64, err = strconv.ParseInt(id, 10, 32); err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		} else {
@@ -106,16 +130,17 @@ func docHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "POST":
-		doc.Id = 37
+		document.AddDocument(&doc)
 		writeDoc(w, &doc)
 	case "GET":
-		pdoc := &doc
-		if id == "0" || id == "" {
+		doc2, err := document.FetchDocument(int(id64))
+		if err != nil || id == "0" || id == "" {
 			// Getting default values
-			pdoc = document.DefaultDocument()
+			doc2 = *document.DefaultDocument()
 		}
-		writeDoc(w, pdoc)
+		writeDoc(w, &doc2)
 	case "PUT":
+		document.UpdateDocument(&doc)
 		writeDoc(w, &doc)
 	}
 
@@ -144,10 +169,11 @@ func main() {
 	appdir := GetAppDir()
 	TemplateDir = path.Join(appdir, "../templates")
 	StaticDir = path.Join(appdir, "../static")
-	http.HandleFunc("/pdf", pdfhandler)
+	http.HandleFunc("/pdf/", pdfhandler)
 	http.HandleFunc("/static/", staticHandler)
-	http.HandleFunc("/", handler)
+	http.HandleFunc("/", editHandler)
 	http.HandleFunc("/document/", docHandler)
+	http.HandleFunc("/edit/", editHandler)
 	fmt.Printf("listening on localhost:8080\n")
 	http.ListenAndServe(":8080", nil)
 }

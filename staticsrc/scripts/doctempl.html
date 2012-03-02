@@ -11,10 +11,10 @@
       <li>
           <label for="{{name}}">{{label}}</label>
           <input id="{{name}}" class="docControl" type="text" value="{{#get}}{{name}}{{/get}}" name="{{name}}"></input>
-      </li>
+       </li>
       {{/sizeControls}}
+      <li><button type="submit" id="getPdf">Get PDF</button></li>
     </ul>
   </div>
     <textarea class="main-text" id="Text" name="Text">{{#get}}Text{{/get}}</textarea>
-    <input type="submit" value="Get PDF"/>
 </div>

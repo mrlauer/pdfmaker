@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"sync"
 )
 
 // Length represents a page-length value.
@@ -220,3 +221,40 @@ func DefaultDocument() *Document {
 	doc.PageWidth, _ = LengthFromString(`8.5"`)
 	return &doc
 }
+
+// documents is a map that serves as a fake database
+var documents map[int]Document = map[int]Document{}
+var docIdx int = 0
+var lock sync.RWMutex
+
+// AddDocument adds a new document and sets the id of its argument
+func AddDocument(doc *Document) {
+	lock.Lock()
+	defer lock.Unlock()
+	docIdx += 1
+	doc.Id = docIdx
+	documents[doc.Id] = *doc
+}
+
+func UpdateDocument(doc *Document) error {
+	lock.Lock()
+	defer lock.Unlock()
+	_, ok := documents[doc.Id]
+	if ok {
+		documents[doc.Id] = *doc
+		return nil
+	}
+	return errors.New("document does not exist")
+}
+
+func FetchDocument(id int) (Document, error) {
+	lock.RLock()
+	defer lock.RUnlock()
+	doc, ok := documents[id]
+	if ok {
+		return doc, nil
+	}
+	return doc, errors.New("document does not exist")
+}
+
+
