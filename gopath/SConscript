@@ -6,6 +6,7 @@ env.PrependENVPath('GOPATH', thisDir)
 
 textproc = env.GoInstallPkg('textproc')
 document = env.GoInstallPkg('local/document')
+web = env.GoInstallPkg('web')
 exe = env.GoInstall('pdfapp', [document, textproc])
 Install(env.subst('$BINDIR'), exe)
 
@@ -13,6 +14,11 @@ def PhonyTargets(env = None, **kw):
      if not env: env = DefaultEnvironment()
      for target,action in kw.items():
          env.AlwaysBuild(env.Alias(target, [], action))
+
+testDoc = env.Alias('TEST:DOC', document, 'go test local/document')
+testWeb = env.Alias('TEST:WEB', web, 'go test web')
+env.AlwaysBuild(testDoc)
+env.AlwaysBuild(testWeb)
+testAll = env.Alias('TEST', [testDoc, testWeb])
  
-env.AlwaysBuild(env.Alias('TEST', [], 'go test local/document'))
 

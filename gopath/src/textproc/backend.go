@@ -9,17 +9,14 @@ package textproc
 #include <pango/pango.h>
 #include <pango/pangocairo.h>
 
-PangoFontFamily *indexFamily(PangoFontFamily **array, int i) { return array[i]; }
+PangoFontFamily *indexFamily(PangoFontFamily **array, int i);
 
-extern cairo_status_t GoWriteToStream(void *closure, const unsigned char *data, unsigned int length);
+extern cairo_status_t GoWriteToStream(void *closure, unsigned char *data, unsigned int length);
 
 cairo_surface_t *	gocairo_pdf_surface_create_for_stream (
 														 void *closure,
 														 double width_in_points,
-														 double height_in_points)
-{
-	return cairo_pdf_surface_create_for_stream(&GoWriteToStream, closure, width_in_points, height_in_points);
-}
+														 double height_in_points);
 */
 import "C"
 
@@ -47,7 +44,7 @@ func ListFontFamilies() []string {
 }
 
 //export GoWriteToStream
-func GoWriteToStream(closure unsafe.Pointer, data *C.char, length C.uint) C.cairo_status_t {
+func GoWriteToStream(closure unsafe.Pointer, data *C.uchar, length C.uint) C.cairo_status_t {
 	stream := *(*io.Writer)(closure)
 	bytes := C.GoBytes(unsafe.Pointer(data), C.int(length))
 	stream.Write(bytes)
