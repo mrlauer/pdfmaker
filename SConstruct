@@ -1,7 +1,10 @@
 import os
 
+extGopath = os.environ.get('GOPATH')
 gopath = os.path.abspath('gopath')
 env = Environment(tools = ['default', 'gotool', 'jsfile'])
+if extGopath:
+    env.PrependENVPath('GOPATH', extGopath)
 env.PrependENVPath('GOPATH', gopath)
 env.PrependENVPath('PATH', ['/usr/local/bin', '/opt/node/bin'])
 bindir = Dir('bin').abspath

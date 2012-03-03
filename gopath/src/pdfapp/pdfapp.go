@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"textproc"
+	"code.google.com/p/gorilla/mux"
 )
 
 // TemplateDir is the runtime directory for templates
@@ -111,8 +112,7 @@ func writeDoc(w http.ResponseWriter, doc *document.Document) {
 func docHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%s %s\n", r.Method, r.URL.Path)
 	fmt.Printf("%s\n", r.Header.Get("Accept"))
-	re := regexp.MustCompile(`/\w*(/(\w+))?/?`)
-	id := re.FindStringSubmatch(r.URL.Path)[2]
+	id := mux.Vars(r)["Id"]
 
 	doc := document.Document{}
 	json.NewDecoder(r.Body).Decode(&doc)
@@ -147,8 +147,7 @@ func docHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func staticHandler(w http.ResponseWriter, r *http.Request) {
-	re := regexp.MustCompile(`/static/(.*)`)
-	filename := re.FindStringSubmatch(r.URL.Path)[1]
+	filename := mux.Vars(r)["Filename"]
 	http.ServeFile(w, r, path.Join(StaticDir, filename))
 }
 
@@ -169,11 +168,13 @@ func main() {
 	appdir := GetAppDir()
 	TemplateDir = path.Join(appdir, "../templates")
 	StaticDir = path.Join(appdir, "../static")
-	http.HandleFunc("/pdf/", pdfhandler)
-	http.HandleFunc("/static/", staticHandler)
-	http.HandleFunc("/", editHandler)
-	http.HandleFunc("/document/", docHandler)
-	http.HandleFunc("/edit/", editHandler)
+	r := mux.NewRouter()
+	r.HandleFunc(`/pdf/{Id:\d*}`, pdfhandler)
+	r.HandleFunc("/static/{Filename:.*}", staticHandler)
+	r.HandleFunc("/", editHandler)
+	r.HandleFunc(`/document/{Id:\d*}`, docHandler)
+	r.HandleFunc(`/edit/{Id:\d*}`, editHandler)
+	http.Handle("/", r)
 	fmt.Printf("listening on localhost:8080\n")
 	http.ListenAndServe(":8080", nil)
 }

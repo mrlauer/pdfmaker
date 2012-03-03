@@ -123,10 +123,10 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!jqueryui',
 
         edit: (idstr)->
             id = parseInt idstr
-            doc_view = new DocView
-                model : new Document
-                    id : id
-            doc_view.model.fetch()
+            doc_view.model = new Document
+                id : id
+            doc_view.model.fetch
+                success: -> doc_view.render()
 
     router = new DocRouter
 
