@@ -7,7 +7,7 @@ env.PrependENVPath('GOPATH', thisDir)
 textproc = env.GoInstallPkg('textproc')
 document = env.GoInstallPkg('local/document')
 web = env.GoInstallPkg('web')
-exe = env.GoInstall('pdfapp', [document, textproc])
+exe = env.GoInstall('pdfapp', [document, textproc, web])
 Install(env.subst('$BINDIR'), exe)
 
 def PhonyTargets(env = None, **kw):

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=9" />
+        <title>Error</title>
+    </head>
+    <body>
+      <h1>Error: {{ .code }}</h1>
+      <p>{{ .errmsg }}</p>
+      <img alt="O Noes! Error {{ .code }}" src="http://httpcats.herokuapp.com/{{ .code }}"></img>
+    </body>
+</html>
+

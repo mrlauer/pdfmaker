@@ -1,7 +1,9 @@
 package main
 
 import (
+	"code.google.com/p/gorilla/mux"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"local/document"
@@ -10,11 +12,10 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strconv"
 	"textproc"
-	"code.google.com/p/gorilla/mux"
+	"web"
 )
 
 // TemplateDir is the runtime directory for templates
@@ -70,15 +71,9 @@ func pdfhandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%s\n", r.Header.Get("Accept"))
 	header := w.Header()
 
-	re := regexp.MustCompile(`/\w*(/(\w+))?/?`)
-	idstr := re.FindStringSubmatch(r.URL.Path)[2]
-	id, err := strconv.ParseInt(idstr, 10, 64)
-	if err != nil {
-		fmt.Printf("could not parse, %s\n", err.Error())
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-	doc, err := document.FetchDocument(int(id))
+	var id int
+	web.AssignTo(&id, mux.Vars(r)["Id"])
+	doc, err := document.FetchDocument(id)
 	if err != nil {
 		fmt.Printf("could not find doc %d, %s\n", id, err.Error())
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -151,6 +146,10 @@ func staticHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, path.Join(StaticDir, filename))
 }
 
+func panicHandler(w http.ResponseWriter, r *http.Request) {
+	panic(errors.New("Oh my stars and whiskers!"))
+}
+
 func GetAppDir() string {
 	apppath, err := exec.LookPath(os.Args[0])
 	if err != nil {
@@ -168,12 +167,14 @@ func main() {
 	appdir := GetAppDir()
 	TemplateDir = path.Join(appdir, "../templates")
 	StaticDir = path.Join(appdir, "../static")
-	r := mux.NewRouter()
+	web.SetTemplateDir(TemplateDir)
+	r := web.MakeRouter(TemplateDir)
 	r.HandleFunc(`/pdf/{Id:\d*}`, pdfhandler)
 	r.HandleFunc("/static/{Filename:.*}", staticHandler)
 	r.HandleFunc("/", editHandler)
 	r.HandleFunc(`/document/{Id:\d*}`, docHandler)
 	r.HandleFunc(`/edit/{Id:\d*}`, editHandler)
+	r.HandleFunc(`/panic/`, panicHandler)
 	http.Handle("/", r)
 	fmt.Printf("listening on localhost:8080\n")
 	http.ListenAndServe(":8080", nil)

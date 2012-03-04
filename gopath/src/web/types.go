@@ -68,7 +68,7 @@ func translateStringSlice(s []string, t reflect.Type) (reflect.Value, error) {
 	return slice, nil
 }
 
-func assignTo(to interface{}, from string) error {
+func AssignTo(to interface{}, from string) error {
 	// "to" must be a pointer
 	ptrval := reflect.ValueOf(to)
 	if ptrval.Kind() != reflect.Ptr {
@@ -77,7 +77,7 @@ func assignTo(to interface{}, from string) error {
 	return assignFromString(from, ptrval.Elem())
 }
 
-func assignToStruct(to interface{}, from map[string]string) error {
+func AssignToStruct(to interface{}, from map[string]string) error {
 	// "to" must be a pointer to a struct
 	ptrval := reflect.ValueOf(to)
 	if ptrval.Kind() != reflect.Ptr {

@@ -17,3 +17,6 @@ SConscript('gopath/SConscript')
 
 # static files--javascript and whatnot
 SConscript('staticsrc/SConscript')
+
+run = env.Alias('run', ['bin', 'static'], './bin/pdfapp')
+AlwaysBuild(run)

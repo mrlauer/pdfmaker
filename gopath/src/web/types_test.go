@@ -15,7 +15,7 @@ type testStruct struct {
 	String  string
 }
 
-func TestAssign(t *testing.T) {
+func TestAssignToStruct(t *testing.T) {
 	testVals := map[string]string{"Int": "1",
 		"Int32":   "32",
 		"Int64":   "64",
@@ -26,7 +26,7 @@ func TestAssign(t *testing.T) {
 		"String":  "hello world"}
 
 	var s testStruct
-	err := assignToStruct(&s, testVals)
+	err := AssignToStruct(&s, testVals)
 	if err != nil {
 		t.Errorf("assignToStruct returned an error")
 	}
@@ -51,4 +51,25 @@ func TestAssign(t *testing.T) {
 	if s.String != "hello world" {
 		t.Errorf("string was %q", s.String)
 	}
+}
+
+func TestAssignTo(t *testing.T) {
+	var i int
+	AssignTo(&i, "42")
+	if i != 42 {
+		t.Errorf("int was %q", i)
+	}
+
+	var i32 int32
+	AssignTo(&i32, "32")
+	if i32 != 32 {
+		t.Errorf("int32 was %q", i)
+	}
+
+	var i64 int64
+	AssignTo(&i64, "64")
+	if i64 != 64 {
+		t.Errorf("int32 was %q", i)
+	}
+
 }
