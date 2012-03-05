@@ -10,11 +10,14 @@ import (
 )
 
 // Router wraps the gorilla router to do a few standard things.
-// * Handle end slashes: the desired behavior is that for GET requests
-//   (and only get requests) if the url does not end with a slash, but
-//   matches something that does, to redirect to slashed one.
-// * Convert panics in handlers to Server Error responses.
-// * Put up standard not found/server error messages
+//
+// - Handle end slashes: the desired behavior is that for GET requests
+// (and only get requests) if the url does not end with a slash, but
+// matches something that does, to redirect to slashed one.
+//
+// - Convert panics in handlers to Server Error responses.
+//
+// - Put up standard not found/server error messages
 type Router struct {
 	grouter     *mux.Router
 	templateDir string
