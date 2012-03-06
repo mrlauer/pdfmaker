@@ -56,14 +56,26 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	var id int
+	web.AssignTo(&id, mux.Vars(r)["Id"])
+	doc, err := DB.Fetch(id)
+	if id != 0 && err != nil {
+		web.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	docJSON, err := json.Marshal(doc)
+	if err != nil {
+		panic(err)
+	}
 	lengthREString := document.LengthREString()
 	data := map[string]interface{}{"fonts": template.JS(fontsJSON),
+		"doc": template.JS(docJSON),
 		"defaultDoc": template.JS(defaultDocJSON),
 		"lengthRE":   lengthREString}
 	header.Set("Content-Type", "text/html")
 	err = templ.Execute(w, data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		web.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
@@ -78,8 +90,7 @@ func pdfhandler(w http.ResponseWriter, r *http.Request) {
 	web.AssignTo(&id, mux.Vars(r)["Id"])
 	doc, err := DB.Fetch(id)
 	if err != nil {
-		fmt.Printf("could not find doc %d, %s\n", id, err.Error())
-		http.Error(w, err.Error(), http.StatusNotFound)
+		web.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
@@ -102,7 +113,7 @@ func writeDoc(w http.ResponseWriter, doc *document.Document) {
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(doc)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		web.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 }
@@ -119,7 +130,7 @@ func docHandler(w http.ResponseWriter, r *http.Request) {
 	if !(id == "0" || id == "") {
 		var err error
 		if id64, err = strconv.ParseInt(id, 10, 32); err != nil {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			web.Error(w, err.Error(), http.StatusNotFound)
 			return
 		} else {
 			doc.Id = int(id64)
