@@ -203,7 +203,7 @@ type Document struct {
 	PageWidth    Length
 	// Id is the document identifier. It is serialized to JSON is "id", 
 	// and omitted if empty.
-	Id int `json:"id,omitempty"`
+	Id int `json:"id,omitempty" bson:"id,omitempty"`
 }
 
 // DefaultDocument returns a Document with reasonable default values.
