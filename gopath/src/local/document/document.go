@@ -222,39 +222,61 @@ func DefaultDocument() *Document {
 	return &doc
 }
 
-// documents is a map that serves as a fake database
-var documents map[int]Document = map[int]Document{}
-var docIdx int = 0
-var lock sync.RWMutex
-
-// AddDocument adds a new document and sets the id of its argument
-func AddDocument(doc *Document) {
-	lock.Lock()
-	defer lock.Unlock()
-	docIdx += 1
-	doc.Id = docIdx
-	documents[doc.Id] = *doc
+type DB interface {
+	Add(doc *Document)
+	Update(doc *Document) error
+	Fetch(id int) (Document, error)
+	Delete(id int) error
+	Close()
 }
 
-func UpdateDocument(doc *Document) error {
-	lock.Lock()
-	defer lock.Unlock()
-	_, ok := documents[doc.Id]
+// documents is a map that serves as a fake database
+type FakeDB struct {
+	documents map[int]Document
+	docIdx int
+	lock sync.RWMutex
+}
+
+func CreateFakeDB() *FakeDB {
+	db := new(FakeDB)
+	db.documents = make(map[int]Document)
+	return db
+}
+
+// AddDocument adds a new document and sets the id of its argument
+func (d *FakeDB)Add(doc *Document) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	d.docIdx += 1
+	doc.Id = d.docIdx
+	d.documents[doc.Id] = *doc
+}
+
+func (d *FakeDB)Update(doc *Document) error {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	_, ok := d.documents[doc.Id]
 	if ok {
-		documents[doc.Id] = *doc
+		d.documents[doc.Id] = *doc
 		return nil
 	}
 	return errors.New("document does not exist")
 }
 
-func FetchDocument(id int) (Document, error) {
-	lock.RLock()
-	defer lock.RUnlock()
-	doc, ok := documents[id]
+func (d *FakeDB)Fetch(id int) (Document, error) {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	doc, ok := d.documents[id]
 	if ok {
 		return doc, nil
 	}
 	return doc, errors.New("document does not exist")
 }
 
+func (d *FakeDB)Delete(id int) error {
+	delete(d.documents, id)
+	return nil
+}
 
+func (d *FakeDB)Close() {
+}

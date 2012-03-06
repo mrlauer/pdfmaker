@@ -24,6 +24,9 @@ var TemplateDir string
 // StaticDir is the runtime directory for static files
 var StaticDir string
 
+// DB is the database
+var DB document.DB
+
 // handler is the handler for the basic page.
 // It simply redirects to an empty edit page
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +76,7 @@ func pdfhandler(w http.ResponseWriter, r *http.Request) {
 
 	var id int
 	web.AssignTo(&id, mux.Vars(r)["Id"])
-	doc, err := document.FetchDocument(id)
+	doc, err := DB.Fetch(id)
 	if err != nil {
 		fmt.Printf("could not find doc %d, %s\n", id, err.Error())
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -125,17 +128,17 @@ func docHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "POST":
-		document.AddDocument(&doc)
+		DB.Add(&doc)
 		writeDoc(w, &doc)
 	case "GET":
-		doc2, err := document.FetchDocument(int(id64))
+		doc2, err := DB.Fetch(int(id64))
 		if err != nil || id == "0" || id == "" {
 			// Getting default values
 			doc2 = *document.DefaultDocument()
 		}
 		writeDoc(w, &doc2)
 	case "PUT":
-		document.UpdateDocument(&doc)
+		DB.Update(&doc)
 		writeDoc(w, &doc)
 	}
 
@@ -164,6 +167,7 @@ func GetAppDir() string {
 }
 
 func main() {
+	DB = document.CreateFakeDB()
 	appdir := GetAppDir()
 	TemplateDir = path.Join(appdir, "../templates")
 	StaticDir = path.Join(appdir, "../static")
