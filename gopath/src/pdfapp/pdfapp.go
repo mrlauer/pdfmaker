@@ -1,3 +1,19 @@
+/*
+The application.
+
+The routes should be, but are not yet
+ - GET /static/{filename}	Get a static file.
+ - GET /edit/				Edit a new document.
+ - GET /					Same as /edit/.
+ - GET /edit/{id}/			Edit an existing document.
+ - GET /document/			Get a json list of all documents(?).
+ - POST /document/			Create a new document with json provided in body.
+ - GET /document/{id}/		Get an existing document in json form.
+ - PUT /document/{id}/		Update an existing document with json in body.
+ - DELETE /document/{id}/	Delete an existing document.
+ - GET /pdf/{id}/			Get the pdf for an existing document.
+Perhaps these should also switch on Accept headers.
+*/
 package main
 
 import (
@@ -56,7 +72,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	var id int
+	var id document.DocId
 	web.AssignTo(&id, mux.Vars(r)["Id"])
 	doc, err := DB.Fetch(id)
 	if id != 0 && err != nil {
@@ -86,7 +102,7 @@ func pdfhandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%s\n", r.Header.Get("Accept"))
 	header := w.Header()
 
-	var id int
+	var id document.DocId
 	web.AssignTo(&id, mux.Vars(r)["Id"])
 	doc, err := DB.Fetch(id)
 	if err != nil {
@@ -133,7 +149,7 @@ func docHandler(w http.ResponseWriter, r *http.Request) {
 			web.Error(w, err.Error(), http.StatusNotFound)
 			return
 		} else {
-			doc.Id = int(id64)
+			doc.Id = document.DocId(id64)
 		}
 	}
 
@@ -142,7 +158,7 @@ func docHandler(w http.ResponseWriter, r *http.Request) {
 		DB.Add(&doc)
 		writeDoc(w, &doc)
 	case "GET":
-		doc2, err := DB.Fetch(int(id64))
+		doc2, err := DB.Fetch(document.DocId(id64))
 		if err != nil || id == "0" || id == "" {
 			// Getting default values
 			doc2 = *document.DefaultDocument()
@@ -188,11 +204,11 @@ func main() {
 	StaticDir = path.Join(appdir, "../static")
 	web.SetTemplateDir(TemplateDir)
 	r := web.MakeRouter(TemplateDir)
-	r.HandleFunc(`/pdf/{Id:\d*}`, pdfhandler)
-	r.HandleFunc("/static/{Filename:.*}", staticHandler)
-	r.HandleFunc("/", editHandler)
-	r.HandleFunc(`/document/{Id:\d*}`, docHandler)
-	r.HandleFunc(`/edit/{Id:\d*}`, editHandler)
+	r.HandleFunc(`/pdf/{Id:\d*}`, pdfhandler).Methods("GET")
+	r.HandleFunc("/static/{Filename:.*}", staticHandler).Methods("GET")
+	r.HandleFunc("/", editHandler).Methods("GET")
+	r.HandleFunc(`/document/{Id:\d*}`, docHandler).Methods("GET", "POST", "PUT", "DELETE")
+	r.HandleFunc(`/edit/{Id:\d*}`, editHandler).Methods("GET")
 	r.HandleFunc(`/panic/`, panicHandler)
 	http.Handle("/", r)
 	fmt.Printf("listening on localhost:8080\n")

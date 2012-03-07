@@ -189,6 +189,8 @@ func (l *Length) UnmarshalJSON(data []byte) error {
 
 // TODO: use a database, you moron!
 
+type DocId int
+
 // Document encapsulates the defining properties of a document.
 type Document struct {
 	Font         string
@@ -203,7 +205,7 @@ type Document struct {
 	PageWidth    Length
 	// Id is the document identifier. It is serialized to JSON is "id", 
 	// and omitted if empty.
-	Id int `json:"id,omitempty" bson:"id,omitempty"`
+	Id DocId `json:"id,omitempty" bson:"id,omitempty"`
 }
 
 // DefaultDocument returns a Document with reasonable default values.
@@ -225,34 +227,34 @@ func DefaultDocument() *Document {
 type DB interface {
 	Add(doc *Document)
 	Update(doc *Document) error
-	Fetch(id int) (Document, error)
-	Delete(id int) error
+	Fetch(id DocId) (Document, error)
+	Delete(id DocId) error
 	Close()
 }
 
 // documents is a map that serves as a fake database
 type FakeDB struct {
-	documents map[int]Document
-	docIdx int
-	lock sync.RWMutex
+	documents map[DocId]Document
+	docIdx    int
+	lock      sync.RWMutex
 }
 
 func CreateFakeDB() *FakeDB {
 	db := new(FakeDB)
-	db.documents = make(map[int]Document)
+	db.documents = make(map[DocId]Document)
 	return db
 }
 
 // AddDocument adds a new document and sets the id of its argument
-func (d *FakeDB)Add(doc *Document) {
+func (d *FakeDB) Add(doc *Document) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	d.docIdx += 1
-	doc.Id = d.docIdx
+	doc.Id = DocId(d.docIdx)
 	d.documents[doc.Id] = *doc
 }
 
-func (d *FakeDB)Update(doc *Document) error {
+func (d *FakeDB) Update(doc *Document) error {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	_, ok := d.documents[doc.Id]
@@ -263,7 +265,7 @@ func (d *FakeDB)Update(doc *Document) error {
 	return errors.New("document does not exist")
 }
 
-func (d *FakeDB)Fetch(id int) (Document, error) {
+func (d *FakeDB) Fetch(id DocId) (Document, error) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	doc, ok := d.documents[id]
@@ -273,10 +275,10 @@ func (d *FakeDB)Fetch(id int) (Document, error) {
 	return doc, errors.New("document does not exist")
 }
 
-func (d *FakeDB)Delete(id int) error {
+func (d *FakeDB) Delete(id DocId) error {
 	delete(d.documents, id)
 	return nil
 }
 
-func (d *FakeDB)Close() {
+func (d *FakeDB) Close() {
 }

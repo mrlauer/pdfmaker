@@ -80,11 +80,11 @@ func (m *MongoDB) Add(doc *Document) {
 		err := c.Find(nil).Sort(bson.M{ "doc.id": -1}).Limit(1).One(&mdoc)
 		id := 1
 		if err == nil {
-			id = mdoc.Doc.Id + 1
+			id = int(mdoc.Doc.Id) + 1
 		}
-		toadd.Doc.Id = id
+		toadd.Doc.Id = DocId(id)
 		err = c.Insert(&toadd)
-		doc.Id = id
+		doc.Id = DocId(id)
 		if err == nil {
 			return
 		}
@@ -102,7 +102,7 @@ func (m *MongoDB) Update(doc *Document) error {
 	return nil
 }
 
-func (m *MongoDB) Fetch(id int) (Document, error) {
+func (m *MongoDB) Fetch(id DocId) (Document, error) {
 	c := m.Documents()
 	mdoc := MongoDBDoc{}
 	err := c.Find(bson.M{"doc.id": id}).One(&mdoc)
@@ -112,7 +112,7 @@ func (m *MongoDB) Fetch(id int) (Document, error) {
 	return mdoc.Doc, nil
 }
 
-func (m *MongoDB) Delete(id int) error {
+func (m *MongoDB) Delete(id DocId) error {
 	c := m.Documents()
 	err := c.Remove(bson.M{"doc.id": id})
 	return err

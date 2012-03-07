@@ -24,7 +24,7 @@ func TestMongoDB(t *testing.T) {
 		doc.PageHeight, _ = LengthFromString(defaultHeight)
 		doc.FontSize = LengthFromPoints(defaultFontSize)
 		mdb.Add(&doc)
-		if doc.Id != i {
+		if doc.Id != DocId(i) {
 			t.Errorf("Document %d has id %d", i, doc.Id)
 		}
 	}
