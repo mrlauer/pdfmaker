@@ -6,6 +6,28 @@ import (
 	"launchpad.net/mgo/bson"
 )
 
+// Getter and setter for Document Length
+// MarshalJSON uses the defining string.
+func (l Length) GetBSON() (interface{}, error) {
+	return l.String(), nil
+}
+
+// UnmarshalJSON uses the defining string.
+func (l *Length) SetBSON(raw bson.Raw) error {
+	var def string
+	err := raw.Unmarshal(&def)
+	if err == nil {
+		*l, err = LengthFromString(def)
+	}
+	return err
+}
+
+func bogusCheck() {
+	var l Length
+	var _ bson.Getter = l
+	var _ bson.Setter = &l
+}
+
 type MongoDBDoc struct {
 	Id  bson.ObjectId `bson:"_id,omitempty"`
 	Doc Document

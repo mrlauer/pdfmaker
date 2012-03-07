@@ -15,8 +15,14 @@ func TestMongoDB(t *testing.T) {
 	defer mdb.DeleteAll()
 
 	N := 4
+	defaultText := "Hello World"
+	defaultHeight := `10"`
+	defaultFontSize := 12.5
 	for i := 1; i<=N; i++ {
 		var doc Document
+		doc.Text = defaultText
+		doc.PageHeight, _ = LengthFromString(defaultHeight)
+		doc.FontSize = LengthFromPoints(defaultFontSize)
 		mdb.Add(&doc)
 		if doc.Id != i {
 			t.Errorf("Document %d has id %d", i, doc.Id)
@@ -27,6 +33,15 @@ func TestMongoDB(t *testing.T) {
 		doc, err := mdb.Fetch(2)
 		if err != nil {
 			t.Errorf("Could not find document")
+		}
+		if doc.Text != defaultText {
+			t.Errorf("Text was not correct (%q)", doc.Text)
+		}
+		if pts := doc.FontSize.Points(); pts != defaultFontSize {
+			t.Errorf("Font size was %g\n", pts)
+		}
+		if ht := doc.PageHeight.String(); ht != defaultHeight {
+			t.Errorf("Height was %q\n", ht)
 		}
 		testText := "Friends! Romans! Countrymen!"
 		doc.Text = testText

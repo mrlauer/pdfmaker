@@ -69,7 +69,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	lengthREString := document.LengthREString()
 	data := map[string]interface{}{"fonts": template.JS(fontsJSON),
-		"doc": template.JS(docJSON),
+		"doc":        template.JS(docJSON),
 		"defaultDoc": template.JS(defaultDocJSON),
 		"lengthRE":   lengthREString}
 	header.Set("Content-Type", "text/html")
@@ -178,7 +178,11 @@ func GetAppDir() string {
 }
 
 func main() {
-	DB = document.CreateFakeDB()
+	var err error
+	DB, err = document.CreateMongoDB("localhost", "pdfdb")
+	if err != nil {
+		panic(err)
+	}
 	appdir := GetAppDir()
 	TemplateDir = path.Join(appdir, "../templates")
 	StaticDir = path.Join(appdir, "../static")
