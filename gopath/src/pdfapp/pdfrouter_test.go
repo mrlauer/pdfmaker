@@ -56,7 +56,7 @@ func TestRouter(t *testing.T) {
 	defer server.Close()
 	base := server.URL
 	test_get(t, base+"/document/", http.StatusOK)
-	test_get(t, base+"/document/3", http.StatusNotFound)
+	test_get(t, base+"/document/3/", http.StatusNotFound)
 	test_get(t, base, http.StatusOK)
 
 	// Test putting and getting
@@ -90,7 +90,7 @@ func TestRouter(t *testing.T) {
 
 	// Check that it's in the database
 	{
-		url := fmt.Sprintf("%s/document/%d", base, int(id))
+		url := fmt.Sprintf("%s/document/%s/", base, id)
 		body = test_get(t, url, http.StatusOK)
 		var doc2 document.Document
 		err = json.Unmarshal(body, &doc2)

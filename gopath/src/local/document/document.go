@@ -193,6 +193,10 @@ func (d DocId)IsNull() bool {
 	return int(d) == 0
 }
 
+func (d DocId)String() string {
+	return strconv.FormatInt(int64(d), 10)
+}
+
 // Document encapsulates the defining properties of a document.
 type Document struct {
 	Font         string

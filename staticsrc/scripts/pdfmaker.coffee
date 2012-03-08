@@ -53,11 +53,16 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!jqueryui',
 
         defaults: defaultDoc
 
-        urlRoot: -> '/document/'
+        url: ->
+            root = '/document/'
+            if @id?
+                "#{root}#{@id}/"
+            else
+                root
 
         pdfUrl: ->
             if @id?
-                "/pdf/#{@id}"
+                "/pdf/#{@id}/"
             else
                 "/pdf/"
 
@@ -119,14 +124,17 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!jqueryui',
 
     class DocRouter extends Backbone.Router
         routes:
-            "edit/:id": "edit"
+            "edit/:id/": "edit"
 
         edit: (idstr)->
             id = parseInt idstr
-            doc_view.model = new Document
-                id : id
-            doc_view.model.fetch
-                success: -> doc_view.render()
+            if doc_view?.model?.id == id
+                doc_view.render()
+            else
+                doc_view.model = new Document
+                    id : id
+                doc_view.model.fetch
+                    success: -> doc_view.render()
 
     router = new DocRouter
 

@@ -200,11 +200,12 @@ func SetupDB(dbname string) document.DB {
 
 func MakeRouter() http.Handler {
 	r := web.MakeRouter(TemplateDir)
-	r.HandleFunc(`/pdf/{Id:\d*}`, pdfhandler).Methods("GET")
+	r.HandleFunc(`/pdf/{Id}/`, pdfhandler).Methods("GET")
 	r.HandleFunc("/static/{Filename:.*}", staticHandler).Methods("GET")
 	r.HandleFunc("/", editHandler).Methods("GET")
-	r.HandleFunc(`/document/{Id:\d*}`, docHandler).Methods("GET", "POST", "PUT", "DELETE")
-	r.HandleFunc(`/edit/{Id:\d*}`, editHandler).Methods("GET")
+	r.HandleFunc(`/document/`, docHandler).Methods("GET", "POST", "PUT", "DELETE")
+	r.HandleFunc(`/document/{Id}/`, docHandler).Methods("GET", "POST", "PUT", "DELETE")
+	r.HandleFunc(`/edit/{Id}/`, editHandler).Methods("GET")
 	r.HandleFunc(`/panic/`, panicHandler)
 	return r
 }
