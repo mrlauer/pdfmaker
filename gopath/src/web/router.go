@@ -70,6 +70,7 @@ func Error(w http.ResponseWriter, errmsg string, code int) {
 	data["code"] = code
 	data["errmsg"] = errmsg
 	header.Set("Content-Type", "text/html")
+	w.WriteHeader(code)
 	err = templ.Execute(w, data)
 	if err != nil {
 		http.Error(w, errmsg, code)

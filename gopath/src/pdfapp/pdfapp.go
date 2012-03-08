@@ -159,7 +159,11 @@ func docHandler(w http.ResponseWriter, r *http.Request) {
 		writeDoc(w, &doc)
 	case "GET":
 		doc2, err := DB.Fetch(document.DocId(id64))
-		if err != nil || id == "0" || id == "" {
+		if err != nil && id64 != 0 {
+			web.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		if id == "0" || id == "" {
 			// Getting default values
 			doc2 = *document.DefaultDocument()
 		}
@@ -193,16 +197,16 @@ func GetAppDir() string {
 	return dir
 }
 
-func main() {
+func SetupDB(dbname string) document.DB {
 	var err error
-	DB, err = document.CreateMongoDB("localhost", "pdfdb")
+	DB, err = document.CreateMongoDB("localhost", dbname)
 	if err != nil {
 		panic(err)
 	}
-	appdir := GetAppDir()
-	TemplateDir = path.Join(appdir, "../templates")
-	StaticDir = path.Join(appdir, "../static")
-	web.SetTemplateDir(TemplateDir)
+	return DB
+}
+
+func MakeRouter() http.Handler {
 	r := web.MakeRouter(TemplateDir)
 	r.HandleFunc(`/pdf/{Id:\d*}`, pdfhandler).Methods("GET")
 	r.HandleFunc("/static/{Filename:.*}", staticHandler).Methods("GET")
@@ -210,6 +214,22 @@ func main() {
 	r.HandleFunc(`/document/{Id:\d*}`, docHandler).Methods("GET", "POST", "PUT", "DELETE")
 	r.HandleFunc(`/edit/{Id:\d*}`, editHandler).Methods("GET")
 	r.HandleFunc(`/panic/`, panicHandler)
+	return r
+}
+
+func SetPaths(topdir string) {
+	TemplateDir = path.Join(topdir, "templates")
+	StaticDir = path.Join(topdir, "static")
+	web.SetTemplateDir(TemplateDir)
+}
+
+func main() {
+	SetupDB("pdfdb")
+
+	appdir := GetAppDir()
+	SetPaths(path.Join(appdir, ".."))
+
+	r := MakeRouter()
 	http.Handle("/", r)
 	fmt.Printf("listening on localhost:8080\n")
 	http.ListenAndServe(":8080", nil)

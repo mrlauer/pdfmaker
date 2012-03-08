@@ -123,3 +123,8 @@ func (m *MongoDB) DeleteAll() error {
 	err := c.RemoveAll(bson.M{})
 	return err
 }
+
+func (m *MongoDB) DropDB() error {
+	err := m.Database().DropDatabase()
+	return err
+}

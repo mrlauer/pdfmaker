@@ -4,7 +4,6 @@ package document
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"regexp"
 	"strconv"
 	"sync"
@@ -61,7 +60,6 @@ func getUnit(unitStr string) (LengthUnit, error) {
 	case `mm`:
 		return Millimeters, nil
 	}
-	fmt.Printf("Invalid unit string %s\n", unitStr)
 	return Points, errors.New("Invalid unit string")
 }
 
@@ -229,6 +227,8 @@ type DB interface {
 	Update(doc *Document) error
 	Fetch(id DocId) (Document, error)
 	Delete(id DocId) error
+	DeleteAll() error
+	DropDB() error
 	Close()
 }
 
@@ -276,7 +276,24 @@ func (d *FakeDB) Fetch(id DocId) (Document, error) {
 }
 
 func (d *FakeDB) Delete(id DocId) error {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 	delete(d.documents, id)
+	return nil
+}
+
+func (d *FakeDB) DeleteAll() error {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	d.documents = make(map[DocId]Document)
+	return nil
+}
+
+func (d *FakeDB) DropDB() error {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	d.documents = make(map[DocId]Document)
+	d.docIdx = 0
 	return nil
 }
 

@@ -17,8 +17,10 @@ def PhonyTargets(env = None, **kw):
 
 testDoc = env.Alias('TEST:DOC', document, 'go test local/document')
 testWeb = env.Alias('TEST:WEB', web, 'go test web')
+testApp = env.Alias('TEST:APP', exe, 'go test pdfapp')
 env.AlwaysBuild(testDoc)
 env.AlwaysBuild(testWeb)
-testAll = env.Alias('TEST', [testDoc, testWeb])
+env.AlwaysBuild(testApp)
+testAll = env.Alias('TEST', [testDoc, testWeb, testApp])
  
 
