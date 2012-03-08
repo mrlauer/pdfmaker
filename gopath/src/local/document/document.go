@@ -187,14 +187,37 @@ func (l *Length) UnmarshalJSON(data []byte) error {
 
 // TODO: use a database, you moron!
 
-type DocId int
-
-func (d DocId)IsNull() bool {
-	return int(d) == 0
+type DocId struct {
+	impl int
 }
 
-func (d DocId)String() string {
-	return strconv.FormatInt(int64(d), 10)
+func (d DocId) IsNull() bool {
+	return d.impl == 0
+}
+
+func (d DocId) String() string {
+	return strconv.FormatInt(int64(d.impl), 10)
+}
+
+func (d DocId) Int() int {
+	return d.impl
+}
+
+func MakeDocId(impl int) DocId {
+	return DocId{impl}
+}
+
+func (d DocId) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.Int())
+}
+
+func (d *DocId) UnmarshalJSON(data []byte) error {
+	var impl int
+	err := json.Unmarshal(data, &impl)
+	if err == nil {
+		*d = MakeDocId(impl)
+	}
+	return err
 }
 
 // Document encapsulates the defining properties of a document.
@@ -258,7 +281,7 @@ func (d *FakeDB) Add(doc *Document) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	d.docIdx += 1
-	doc.Id = DocId(d.docIdx)
+	doc.Id = MakeDocId(d.docIdx)
 	d.documents[doc.Id] = *doc
 }
 

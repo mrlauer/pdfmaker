@@ -24,13 +24,17 @@ func TestMongoDB(t *testing.T) {
 		doc.PageHeight, _ = LengthFromString(defaultHeight)
 		doc.FontSize = LengthFromPoints(defaultFontSize)
 		mdb.Add(&doc)
-		if doc.Id != DocId(i) {
+		if doc.Id != MakeDocId(i) {
 			t.Errorf("Document %d has id %d", i, doc.Id)
 		}
 	}
 
+	fetch := func(id int) (Document, error) {
+		return mdb.Fetch(MakeDocId(id))
+	}
+
 	{
-		doc, err := mdb.Fetch(2)
+		doc, err := fetch(2)
 		if err != nil {
 			t.Errorf("Could not find document")
 		}
@@ -49,7 +53,7 @@ func TestMongoDB(t *testing.T) {
 		if err != nil {
 			t.Errorf("Could not update document")
 		}
-		doc2, err := mdb.Fetch(2)
+		doc2, err := fetch(2)
 		if err != nil {
 			t.Errorf("Could not find document")
 		}
@@ -58,15 +62,15 @@ func TestMongoDB(t *testing.T) {
 		}
 	}
 	{
-		_, err := mdb.Fetch(47)
+		_, err := fetch(47)
 		if err == nil {
 			t.Errorf("Found nonexistent document")
 		}
 	}
 
 	{
-		mdb.Delete(3)
-		_, err = mdb.Fetch(3)
+		mdb.Delete(MakeDocId(3))
+		_, err = fetch(3)
 		if err == nil {
 			t.Errorf("Found nonexistent document")
 		}

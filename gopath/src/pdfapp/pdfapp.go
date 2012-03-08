@@ -42,6 +42,13 @@ var StaticDir string
 // DB is the database
 var DB document.DB
 
+// assignId returns the (possibly null, of course) docId for the request.
+func assignId(r *http.Request) document.DocId {
+	var id int
+	web.AssignTo(&id, mux.Vars(r)["Id"])
+	return document.MakeDocId(id)
+}
+
 // handler is the handler for the basic page.
 // It simply redirects to an empty edit page
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -71,10 +78,9 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	var id document.DocId
-	web.AssignTo(&id, mux.Vars(r)["Id"])
+	id := assignId(r)
 	doc, err := DB.Fetch(id)
-	if id != 0 && err != nil {
+	if !id.IsNull() && err != nil {
 		web.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
@@ -101,8 +107,7 @@ func pdfhandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%s\n", r.Header.Get("Accept"))
 	header := w.Header()
 
-	var id document.DocId
-	web.AssignTo(&id, mux.Vars(r)["Id"])
+	id := assignId(r)
 	doc, err := DB.Fetch(id)
 	if err != nil {
 		web.Error(w, err.Error(), http.StatusNotFound)
@@ -136,8 +141,7 @@ func writeDoc(w http.ResponseWriter, doc *document.Document) {
 func docHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%s %s\n", r.Method, r.URL.Path)
 	fmt.Printf("%s\n", r.Header.Get("Accept"))
-	var id document.DocId
-	web.AssignTo(&id, mux.Vars(r)["Id"])
+	id := assignId(r)
 
 	doc := document.Document{}
 	json.NewDecoder(r.Body).Decode(&doc)

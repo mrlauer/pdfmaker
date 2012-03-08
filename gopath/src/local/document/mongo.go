@@ -22,6 +22,20 @@ func (l *Length) SetBSON(raw bson.Raw) error {
 	return err
 }
 
+func (d DocId) GetBSON() (interface{}, error) {
+	return d.impl, nil
+}
+
+// UnmarshalJSON uses the defining string.
+func (d *DocId) SetBSON(raw bson.Raw) error {
+	var def int
+	err := raw.Unmarshal(&def)
+	if err == nil {
+		*d = MakeDocId(def)
+	}
+	return err
+}
+
 func bogusCheck() {
 	var l Length
 	var _ bson.Getter = l
@@ -80,11 +94,11 @@ func (m *MongoDB) Add(doc *Document) {
 		err := c.Find(nil).Sort(bson.M{ "doc.id": -1}).Limit(1).One(&mdoc)
 		id := 1
 		if err == nil {
-			id = int(mdoc.Doc.Id) + 1
+			id = int(mdoc.Doc.Id.Int()) + 1
 		}
-		toadd.Doc.Id = DocId(id)
+		toadd.Doc.Id = MakeDocId(id)
 		err = c.Insert(&toadd)
-		doc.Id = DocId(id)
+		doc.Id = toadd.Doc.Id
 		if err == nil {
 			return
 		}
