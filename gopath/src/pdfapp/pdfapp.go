@@ -29,7 +29,6 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"textproc"
 	"web"
 )
@@ -137,20 +136,14 @@ func writeDoc(w http.ResponseWriter, doc *document.Document) {
 func docHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%s %s\n", r.Method, r.URL.Path)
 	fmt.Printf("%s\n", r.Header.Get("Accept"))
-	id := mux.Vars(r)["Id"]
+	var id document.DocId
+	web.AssignTo(&id, mux.Vars(r)["Id"])
 
 	doc := document.Document{}
 	json.NewDecoder(r.Body).Decode(&doc)
 
-	var id64 int64
-	if !(id == "0" || id == "") {
-		var err error
-		if id64, err = strconv.ParseInt(id, 10, 32); err != nil {
-			web.Error(w, err.Error(), http.StatusNotFound)
-			return
-		} else {
-			doc.Id = document.DocId(id64)
-		}
+	if !id.IsNull() {
+		doc.Id = id
 	}
 
 	switch r.Method {
@@ -158,14 +151,13 @@ func docHandler(w http.ResponseWriter, r *http.Request) {
 		DB.Add(&doc)
 		writeDoc(w, &doc)
 	case "GET":
-		doc2, err := DB.Fetch(document.DocId(id64))
-		if err != nil && id64 != 0 {
-			web.Error(w, err.Error(), http.StatusNotFound)
-			return
-		}
-		if id == "0" || id == "" {
+		var doc2 document.Document
+		var err error
+		if id.IsNull() {
 			// Getting default values
 			doc2 = *document.DefaultDocument()
+		} else if doc2, err = DB.Fetch(id); err != nil {
+			web.Error(w, err.Error(), http.StatusNotFound)
 		}
 		writeDoc(w, &doc2)
 	case "PUT":

@@ -189,6 +189,10 @@ func (l *Length) UnmarshalJSON(data []byte) error {
 
 type DocId int
 
+func (d DocId)IsNull() bool {
+	return int(d) == 0
+}
+
 // Document encapsulates the defining properties of a document.
 type Document struct {
 	Font         string
