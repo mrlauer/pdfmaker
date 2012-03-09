@@ -84,7 +84,7 @@ func TestRouter(t *testing.T) {
 	}
 	id := doc2.Id
 	// This may change
-	if id != document.MakeDocId(1) {
+	if id != document.MakeDocId("1") {
 		t.Errorf("Returned document had id %v", id)
 	}
 

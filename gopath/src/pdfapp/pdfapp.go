@@ -44,7 +44,7 @@ var DB document.DB
 
 // assignId returns the (possibly null, of course) docId for the request.
 func assignId(r *http.Request) document.DocId {
-	var id int
+	var id string
 	web.AssignTo(&id, mux.Vars(r)["Id"])
 	return document.MakeDocId(id)
 }

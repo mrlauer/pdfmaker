@@ -14,7 +14,7 @@ func TestMongoDB(t *testing.T) {
 	defer mdb.Close()
 	defer mdb.DeleteAll()
 
-	N := 4
+	N := 20 
 	defaultText := "Hello World"
 	defaultHeight := `10"`
 	defaultFontSize := 12.5
@@ -24,13 +24,13 @@ func TestMongoDB(t *testing.T) {
 		doc.PageHeight, _ = LengthFromString(defaultHeight)
 		doc.FontSize = LengthFromPoints(defaultFontSize)
 		mdb.Add(&doc)
-		if doc.Id != MakeDocId(i) {
+		if doc.Id != MakeDocIdInt(i) {
 			t.Errorf("Document %d has id %d", i, doc.Id)
 		}
 	}
 
 	fetch := func(id int) (Document, error) {
-		return mdb.Fetch(MakeDocId(id))
+		return mdb.Fetch(MakeDocIdInt(id))
 	}
 
 	{
@@ -69,13 +69,13 @@ func TestMongoDB(t *testing.T) {
 	}
 
 	{
-		mdb.Delete(MakeDocId(3))
+		mdb.Delete(MakeDocId("3"))
 		_, err = fetch(3)
 		if err == nil {
 			t.Errorf("Found nonexistent document")
 		}
 		ct := mdb.Count()
-		if ct != 3 {
+		if ct != N-1 {
 			t.Errorf("Wrong count after remove: %d", ct)
 		}
 	}

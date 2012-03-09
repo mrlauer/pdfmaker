@@ -2,6 +2,7 @@ package document
 
 import (
 	"errors"
+	"fmt"
 	"launchpad.net/mgo"
 	"launchpad.net/mgo/bson"
 )
@@ -28,7 +29,7 @@ func (d DocId) GetBSON() (interface{}, error) {
 
 // UnmarshalJSON uses the defining string.
 func (d *DocId) SetBSON(raw bson.Raw) error {
-	var def int
+	var def string
 	err := raw.Unmarshal(&def)
 	if err == nil {
 		*d = MakeDocId(def)
@@ -90,13 +91,26 @@ func (m *MongoDB) Add(doc *Document) {
 	c := m.Documents()
 	toadd := MongoDBDoc{Doc: *doc}
 	for true {
-		var mdoc MongoDBDoc
-		err := c.Find(nil).Sort(bson.M{ "doc.id": -1}).Limit(1).One(&mdoc)
-		id := 1
-		if err == nil {
-			id = int(mdoc.Doc.Id.Int()) + 1
+		// MapReduce!
+		job := mgo.MapReduce {
+			Map: `function() { 
+				var i = parseInt(this.doc.id); 
+				if(!isNaN(i)) {
+					emit(0, i)
+				}
+			}`,
+			Reduce: `function(key, values) { return Math.max.apply(null, values); }`,
 		}
-		toadd.Doc.Id = MakeDocId(id)
+		var result []struct{ Id int "_id"; Value int }
+		_, err := c.Find(nil).MapReduce(job, &result)
+		if err != nil {
+			fmt.Printf("MapReduce error: %q\n", err.Error())
+		}
+		id := 1
+		if err == nil && len(result) > 0 {
+			id = result[0].Value + 1
+		}
+		toadd.Doc.Id = MakeDocIdInt(id)
 		err = c.Insert(&toadd)
 		doc.Id = toadd.Doc.Id
 		if err == nil {

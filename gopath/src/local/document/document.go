@@ -188,31 +188,36 @@ func (l *Length) UnmarshalJSON(data []byte) error {
 // TODO: use a database, you moron!
 
 type DocId struct {
-	impl int
+	impl string
 }
 
 func (d DocId) IsNull() bool {
-	return d.impl == 0
+	return d.impl == ""
+}
+
+func (d DocId) IsValid() bool {
+	return d.impl != ""
 }
 
 func (d DocId) String() string {
-	return strconv.FormatInt(int64(d.impl), 10)
-}
-
-func (d DocId) Int() int {
 	return d.impl
 }
 
-func MakeDocId(impl int) DocId {
+func MakeDocId(impl string) DocId {
+	return DocId{impl}
+}
+
+func MakeDocIdInt(val int) DocId {
+	impl := strconv.FormatInt(int64(val), 10)
 	return DocId{impl}
 }
 
 func (d DocId) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.Int())
+	return json.Marshal(d.String())
 }
 
 func (d *DocId) UnmarshalJSON(data []byte) error {
-	var impl int
+	var impl string
 	err := json.Unmarshal(data, &impl)
 	if err == nil {
 		*d = MakeDocId(impl)
@@ -281,7 +286,7 @@ func (d *FakeDB) Add(doc *Document) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	d.docIdx += 1
-	doc.Id = MakeDocId(d.docIdx)
+	doc.Id = MakeDocIdInt(d.docIdx)
 	d.documents[doc.Id] = *doc
 }
 
