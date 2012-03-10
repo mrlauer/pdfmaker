@@ -2,6 +2,8 @@
 package document
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"regexp"
@@ -205,6 +207,15 @@ func (d DocId) String() string {
 
 func MakeDocId(impl string) DocId {
 	return DocId{impl}
+}
+
+// NewDocId generates a (presumably!) unique docId.
+// It uses rand to create a type 4 uuid, then base64s it
+func NewDocId() (DocId, error) {
+	b := make([]byte, 12)
+	_, err := rand.Read(b)
+	impl := base64.URLEncoding.EncodeToString(b)
+	return MakeDocId(impl), err
 }
 
 func MakeDocIdInt(val int) DocId {

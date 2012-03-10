@@ -2,7 +2,6 @@ package document
 
 import (
 	"errors"
-	"fmt"
 	"launchpad.net/mgo"
 	"launchpad.net/mgo/bson"
 )
@@ -85,32 +84,38 @@ func (m *MongoDB) Count() int {
 	return n
 }
 
-
 func (m *MongoDB) Add(doc *Document) {
 	// Use optimistic loop strategy. Maybe use a counter instead at some point.
 	c := m.Documents()
 	toadd := MongoDBDoc{Doc: *doc}
 	for true {
-		// MapReduce!
-		job := mgo.MapReduce {
-			Map: `function() { 
-				var i = parseInt(this.doc.id); 
-				if(!isNaN(i)) {
-					emit(0, i)
-				}
-			}`,
-			Reduce: `function(key, values) { return Math.max.apply(null, values); }`,
-		}
-		var result []struct{ Id int "_id"; Value int }
-		_, err := c.Find(nil).MapReduce(job, &result)
+		/*
+			// MapReduce!
+			job := mgo.MapReduce {
+				Map: `function() { 
+					var i = parseInt(this.doc.id); 
+					if(!isNaN(i)) {
+						emit(0, i)
+					}
+				}`,
+				Reduce: `function(key, values) { return Math.max.apply(null, values); }`,
+			}
+			var result []struct{ Id int "_id"; Value int }
+			_, err := c.Find(nil).MapReduce(job, &result)
+			if err != nil {
+				fmt.Printf("MapReduce error: %q\n", err.Error())
+			}
+			id := 1
+			if err == nil && len(result) > 0 {
+				id = result[0].Value + 1
+			}
+			toadd.Doc.Id = MakeDocIdInt(id)
+		*/
+		docid, err := NewDocId()
+		toadd.Doc.Id = docid
 		if err != nil {
-			fmt.Printf("MapReduce error: %q\n", err.Error())
+			continue
 		}
-		id := 1
-		if err == nil && len(result) > 0 {
-			id = result[0].Value + 1
-		}
-		toadd.Doc.Id = MakeDocIdInt(id)
 		err = c.Insert(&toadd)
 		doc.Id = toadd.Doc.Id
 		if err == nil {

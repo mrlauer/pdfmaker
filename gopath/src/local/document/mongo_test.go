@@ -1,9 +1,8 @@
 package document
 
-import(
+import (
 	"testing"
 )
-
 
 func TestMongoDB(t *testing.T) {
 	mdb, err := CreateMongoDB("localhost", "testdb")
@@ -14,23 +13,27 @@ func TestMongoDB(t *testing.T) {
 	defer mdb.Close()
 	defer mdb.DeleteAll()
 
-	N := 20 
+	N := 20
 	defaultText := "Hello World"
 	defaultHeight := `10"`
 	defaultFontSize := 12.5
-	for i := 1; i<=N; i++ {
+	ids := []DocId{}
+	for i := 1; i <= N; i++ {
 		var doc Document
 		doc.Text = defaultText
 		doc.PageHeight, _ = LengthFromString(defaultHeight)
 		doc.FontSize = LengthFromPoints(defaultFontSize)
 		mdb.Add(&doc)
-		if doc.Id != MakeDocIdInt(i) {
-			t.Errorf("Document %d has id %d", i, doc.Id)
+		for _, oldId := range ids {
+			if oldId == doc.Id {
+				t.Errorf("repeated id %q", doc.Id.String())
+			}
 		}
+		ids = append(ids, doc.Id)
 	}
 
 	fetch := func(id int) (Document, error) {
-		return mdb.Fetch(MakeDocIdInt(id))
+		return mdb.Fetch(ids[id])
 	}
 
 	{
@@ -62,14 +65,15 @@ func TestMongoDB(t *testing.T) {
 		}
 	}
 	{
-		_, err := fetch(47)
+		newId, _ := NewDocId()
+		_, err := mdb.Fetch(newId)
 		if err == nil {
 			t.Errorf("Found nonexistent document")
 		}
 	}
 
 	{
-		mdb.Delete(MakeDocId("3"))
+		mdb.Delete(ids[3])
 		_, err = fetch(3)
 		if err == nil {
 			t.Errorf("Found nonexistent document")

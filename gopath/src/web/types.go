@@ -98,4 +98,3 @@ func AssignToStruct(to interface{}, from map[string]string) error {
 	}
 	return nil
 }
-

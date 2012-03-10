@@ -10,11 +10,11 @@ type Mux struct {
 	variables []string
 }
 
-func (m *Mux)Text() string {
+func (m *Mux) Text() string {
 	return m.text
 }
 
-func (m *Mux)Regexp() *regexp.Regexp {
+func (m *Mux) Regexp() *regexp.Regexp {
 	return m.muxRegexp
 }
 

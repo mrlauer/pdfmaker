@@ -85,7 +85,7 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!jqueryui',
             @model.on 'change', ->
                 self.render()
                 if ! self.model.isNew()
-                    router.navigate "edit/#{self.model.id}"
+                    router.navigate "edit/#{self.model.id}/"
 
             @render()
 
@@ -127,7 +127,7 @@ require [ 'mustache', 'text!doctempl.html', 'order!jquery', 'order!jqueryui',
             "edit/:id/": "edit"
 
         edit: (idstr)->
-            id = parseInt idstr
+            id = idstr
             if doc_view?.model?.id == id
                 doc_view.render()
             else

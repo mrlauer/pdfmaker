@@ -83,10 +83,6 @@ func TestRouter(t *testing.T) {
 		t.Errorf("Returned document had wrong text %q", doc2.Text)
 	}
 	id := doc2.Id
-	// This may change
-	if id != document.MakeDocId("1") {
-		t.Errorf("Returned document had id %v", id)
-	}
 
 	// Check that it's in the database
 	{
