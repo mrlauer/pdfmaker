@@ -4,6 +4,7 @@ env = env.Clone()
 thisDir = Dir('.').abspath
 env.PrependENVPath('GOPATH', thisDir)
 
+db = env.GoInstallPkg('db')
 textproc = env.GoInstallPkg('textproc')
 document = env.GoInstallPkg('local/document')
 web = env.GoInstallPkg('web')
@@ -17,9 +18,11 @@ def PhonyTargets(env = None, **kw):
 
 testDoc = env.Alias('TEST:DOC', document, 'go test local/document')
 testWeb = env.Alias('TEST:WEB', web, 'go test web')
+testDB = env.Alias('TEST:DB', db, 'go test db')
 testApp = env.Alias('TEST:APP', exe, 'go test pdfapp')
 env.AlwaysBuild(testDoc)
 env.AlwaysBuild(testWeb)
+env.AlwaysBuild(testDB)
 env.AlwaysBuild(testApp)
 testAll = env.Alias('TEST', [testDoc, testWeb, testApp])
  
