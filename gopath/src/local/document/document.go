@@ -2,13 +2,11 @@
 package document
 
 import (
-	"crypto/rand"
-	"encoding/base64"
+	"db"
 	"encoding/json"
 	"errors"
 	"regexp"
 	"strconv"
-	"sync"
 )
 
 // Length represents a page-length value.
@@ -187,55 +185,6 @@ func (l *Length) UnmarshalJSON(data []byte) error {
 	return err
 }
 
-// TODO: use a database, you moron!
-
-type DocId struct {
-	impl string
-}
-
-func (d DocId) IsNull() bool {
-	return d.impl == ""
-}
-
-func (d DocId) IsValid() bool {
-	return d.impl != ""
-}
-
-func (d DocId) String() string {
-	return d.impl
-}
-
-func MakeDocId(impl string) DocId {
-	return DocId{impl}
-}
-
-// NewDocId generates a (presumably!) unique docId.
-// It uses rand to create a type 4 uuid, then base64s it
-func NewDocId() (DocId, error) {
-	b := make([]byte, 12)
-	_, err := rand.Read(b)
-	impl := base64.URLEncoding.EncodeToString(b)
-	return MakeDocId(impl), err
-}
-
-func MakeDocIdInt(val int) DocId {
-	impl := strconv.FormatInt(int64(val), 10)
-	return DocId{impl}
-}
-
-func (d DocId) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.String())
-}
-
-func (d *DocId) UnmarshalJSON(data []byte) error {
-	var impl string
-	err := json.Unmarshal(data, &impl)
-	if err == nil {
-		*d = MakeDocId(impl)
-	}
-	return err
-}
-
 // Document encapsulates the defining properties of a document.
 type Document struct {
 	Font         string
@@ -250,7 +199,7 @@ type Document struct {
 	PageWidth    Length
 	// Id is the document identifier. It is serialized to JSON is "id", 
 	// and omitted if empty.
-	Id DocId `json:"id,omitempty" bson:"id,omitempty"`
+	Id db.Id `json:"id,omitempty" bson:"id,omitempty"`
 }
 
 // DefaultDocument returns a Document with reasonable default values.
@@ -272,77 +221,9 @@ func DefaultDocument() *Document {
 type DB interface {
 	Add(doc *Document)
 	Update(doc *Document) error
-	Fetch(id DocId) (Document, error)
-	Delete(id DocId) error
+	Fetch(id db.Id) (Document, error)
+	Delete(id db.Id) error
 	DeleteAll() error
 	DropDB() error
 	Close()
-}
-
-// documents is a map that serves as a fake database
-type FakeDB struct {
-	documents map[DocId]Document
-	docIdx    int
-	lock      sync.RWMutex
-}
-
-func CreateFakeDB() *FakeDB {
-	db := new(FakeDB)
-	db.documents = make(map[DocId]Document)
-	return db
-}
-
-// AddDocument adds a new document and sets the id of its argument
-func (d *FakeDB) Add(doc *Document) {
-	d.lock.Lock()
-	defer d.lock.Unlock()
-	d.docIdx += 1
-	doc.Id = MakeDocIdInt(d.docIdx)
-	d.documents[doc.Id] = *doc
-}
-
-func (d *FakeDB) Update(doc *Document) error {
-	d.lock.Lock()
-	defer d.lock.Unlock()
-	_, ok := d.documents[doc.Id]
-	if ok {
-		d.documents[doc.Id] = *doc
-		return nil
-	}
-	return errors.New("document does not exist")
-}
-
-func (d *FakeDB) Fetch(id DocId) (Document, error) {
-	d.lock.RLock()
-	defer d.lock.RUnlock()
-	doc, ok := d.documents[id]
-	if ok {
-		return doc, nil
-	}
-	return doc, errors.New("document does not exist")
-}
-
-func (d *FakeDB) Delete(id DocId) error {
-	d.lock.RLock()
-	defer d.lock.RUnlock()
-	delete(d.documents, id)
-	return nil
-}
-
-func (d *FakeDB) DeleteAll() error {
-	d.lock.RLock()
-	defer d.lock.RUnlock()
-	d.documents = make(map[DocId]Document)
-	return nil
-}
-
-func (d *FakeDB) DropDB() error {
-	d.lock.RLock()
-	defer d.lock.RUnlock()
-	d.documents = make(map[DocId]Document)
-	d.docIdx = 0
-	return nil
-}
-
-func (d *FakeDB) Close() {
 }

@@ -18,6 +18,7 @@ package main
 
 import (
 	"code.google.com/p/gorilla/mux"
+	"db"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -43,10 +44,10 @@ var StaticDir string
 var DB document.DB
 
 // assignId returns the (possibly null, of course) docId for the request.
-func assignId(r *http.Request) document.DocId {
+func assignId(r *http.Request) db.Id {
 	var id string
 	web.AssignTo(&id, mux.Vars(r)["Id"])
-	return document.MakeDocId(id)
+	return db.MakeId(id)
 }
 
 // handler is the handler for the basic page.

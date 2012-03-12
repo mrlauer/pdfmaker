@@ -1,6 +1,7 @@
 package document
 
 import (
+	"db"
 	"testing"
 )
 
@@ -17,7 +18,7 @@ func TestMongoDB(t *testing.T) {
 	defaultText := "Hello World"
 	defaultHeight := `10"`
 	defaultFontSize := 12.5
-	ids := []DocId{}
+	ids := []db.Id{}
 	for i := 1; i <= N; i++ {
 		var doc Document
 		doc.Text = defaultText
@@ -26,7 +27,7 @@ func TestMongoDB(t *testing.T) {
 		mdb.Add(&doc)
 		for _, oldId := range ids {
 			if oldId == doc.Id {
-				t.Errorf("repeated id %q", doc.Id.String())
+				t.Errorf("repeated id %q", db.Id(doc.Id).String())
 			}
 		}
 		ids = append(ids, doc.Id)
@@ -65,7 +66,7 @@ func TestMongoDB(t *testing.T) {
 		}
 	}
 	{
-		newId, _ := NewDocId()
+		newId, _ := db.NewId()
 		_, err := mdb.Fetch(newId)
 		if err == nil {
 			t.Errorf("Found nonexistent document")

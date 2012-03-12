@@ -1,6 +1,7 @@
 package document
 
 import (
+	"db"
 	"errors"
 	"launchpad.net/mgo"
 	"launchpad.net/mgo/bson"
@@ -18,20 +19,6 @@ func (l *Length) SetBSON(raw bson.Raw) error {
 	err := raw.Unmarshal(&def)
 	if err == nil {
 		*l, err = LengthFromString(def)
-	}
-	return err
-}
-
-func (d DocId) GetBSON() (interface{}, error) {
-	return d.impl, nil
-}
-
-// UnmarshalJSON uses the defining string.
-func (d *DocId) SetBSON(raw bson.Raw) error {
-	var def string
-	err := raw.Unmarshal(&def)
-	if err == nil {
-		*d = MakeDocId(def)
 	}
 	return err
 }
@@ -111,8 +98,8 @@ func (m *MongoDB) Add(doc *Document) {
 			}
 			toadd.Doc.Id = MakeDocIdInt(id)
 		*/
-		docid, err := NewDocId()
-		toadd.Doc.Id = docid
+		dbid, err := db.NewId()
+		toadd.Doc.Id = dbid
 		if err != nil {
 			continue
 		}
@@ -135,7 +122,7 @@ func (m *MongoDB) Update(doc *Document) error {
 	return nil
 }
 
-func (m *MongoDB) Fetch(id DocId) (Document, error) {
+func (m *MongoDB) Fetch(id db.Id) (Document, error) {
 	c := m.Documents()
 	mdoc := MongoDBDoc{}
 	err := c.Find(bson.M{"doc.id": id}).One(&mdoc)
@@ -145,7 +132,7 @@ func (m *MongoDB) Fetch(id DocId) (Document, error) {
 	return mdoc.Doc, nil
 }
 
-func (m *MongoDB) Delete(id DocId) error {
+func (m *MongoDB) Delete(id db.Id) error {
 	c := m.Documents()
 	err := c.Remove(bson.M{"doc.id": id})
 	return err
