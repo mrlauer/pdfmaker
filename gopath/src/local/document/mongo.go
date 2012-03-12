@@ -61,8 +61,8 @@ func (m *MongoDB) Count() int {
 	return m.Database.Count(docCollection)
 }
 
-func (m *MongoDB) Add(doc *Document) {
-	m.Database.Add(docCollection, doc)
+func (m *MongoDB) Add(doc *Document) error {
+	return m.Database.Add(docCollection, doc)
 }
 
 func (m *MongoDB) Update(doc *Document) error {

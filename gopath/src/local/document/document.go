@@ -219,7 +219,7 @@ func DefaultDocument() *Document {
 }
 
 type DB interface {
-	Add(doc *Document)
+	Add(doc *Document) error
 	Update(doc *Document) error
 	Fetch(id db.Id) (Document, error)
 	Delete(id db.Id) error

@@ -55,7 +55,6 @@ func TestRouter(t *testing.T) {
 	server := httptest.NewServer(r)
 	defer server.Close()
 	base := server.URL
-	test_get(t, base+"/document/", http.StatusOK)
 	test_get(t, base+"/document/3/", http.StatusNotFound)
 	test_get(t, base, http.StatusOK)
 

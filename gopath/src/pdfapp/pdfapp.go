@@ -139,9 +139,21 @@ func writeDoc(w http.ResponseWriter, doc *document.Document) {
 	}
 }
 
-func docHandler(w http.ResponseWriter, r *http.Request) {
+func postDocHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%s %s\n", r.Method, r.URL.Path)
-	fmt.Printf("%s\n", r.Header.Get("Accept"))
+	doc := document.Document{}
+	json.NewDecoder(r.Body).Decode(&doc)
+	err := DB.Add(&doc)
+	if err != nil {
+		// Try to figure out what the error was
+		web.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeDoc(w, &doc)
+}
+
+func putDocHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("%s %s\n", r.Method, r.URL.Path)
 	id := assignId(r)
 
 	doc := document.Document{}
@@ -150,26 +162,29 @@ func docHandler(w http.ResponseWriter, r *http.Request) {
 	if !id.IsNull() {
 		doc.Id = id
 	}
+	DB.Update(&doc)
+	writeDoc(w, &doc)
+}
 
-	switch r.Method {
-	case "POST":
-		DB.Add(&doc)
-		writeDoc(w, &doc)
-	case "GET":
-		var doc2 document.Document
-		var err error
-		if id.IsNull() {
-			// Getting default values
-			doc2 = *document.DefaultDocument()
-		} else if doc2, err = DB.Fetch(id); err != nil {
-			web.Error(w, err.Error(), http.StatusNotFound)
-		}
-		writeDoc(w, &doc2)
-	case "PUT":
-		DB.Update(&doc)
-		writeDoc(w, &doc)
+func getDocHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("%s %s\n", r.Method, r.URL.Path)
+	id := assignId(r)
+	doc, err := DB.Fetch(id)
+	if err != nil {
+		web.Error(w, err.Error(), http.StatusNotFound)
+		return
 	}
+	writeDoc(w, &doc)
+}
 
+func deleteDocHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("%s %s\n", r.Method, r.URL.Path)
+	id := assignId(r)
+	err := DB.Delete(id)
+	if err != nil {
+		web.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
 }
 
 func staticHandler(w http.ResponseWriter, r *http.Request) {
@@ -208,8 +223,14 @@ func MakeRouter() http.Handler {
 	r.HandleFunc(`/pdf/{Id}/`, pdfhandler).Methods("GET")
 	r.HandleFunc("/static/{Filename:.*}", staticHandler).Methods("GET")
 	r.HandleFunc("/", editHandler).Methods("GET")
-	r.HandleFunc(`/document/`, docHandler).Methods("GET", "POST", "PUT", "DELETE")
-	r.HandleFunc(`/document/{Id}/`, docHandler).Methods("GET", "POST", "PUT", "DELETE")
+
+	docPrefix := r.PathPrefix(`/document/`).Subrouter()
+	docPrefix.HandleFunc(`/`, postDocHandler).Methods("POST")
+	idr := docPrefix.PathPrefix(`/{Id}/`).Subrouter()
+	idr.HandleFunc(`/`, putDocHandler).Methods("PUT")
+	idr.HandleFunc(`/`, getDocHandler).Methods("GET")
+	idr.HandleFunc(`/`, deleteDocHandler).Methods("DELETE")
+
 	r.HandleFunc(`/edit/{Id}/`, editHandler).Methods("GET")
 	r.HandleFunc(`/panic/`, panicHandler)
 	return r

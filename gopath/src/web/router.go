@@ -27,6 +27,10 @@ func (r *Router) HandleFunc(path string, f func(http.ResponseWriter, *http.Reque
 	return r.grouter.HandleFunc(path, f)
 }
 
+func (r *Router) PathPrefix(path string) *mux.Route {
+	return r.grouter.PathPrefix(path)
+}
+
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if err := recover(); err != nil {
