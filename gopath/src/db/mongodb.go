@@ -52,15 +52,17 @@ func (m *MongoDB) Add(collection string, obj DBObjectWriter) error {
 	toadd := MongoDBObject{Object: obj}
 	for true {
 		id, err := NewId()
+		if err != nil {
+			return errors.New("Could not create new Id: " + err.Error())
+		}
 		toadd.Id = id
 		obj.SetObjectId(id)
+		err = c.Insert(&toadd)
 		if err != nil {
+			// Should check that it was a duplicate error
 			continue
 		}
-		err = c.Insert(&toadd)
-		if err == nil {
-			return nil
-		}
+		break
 	}
 	return nil
 }

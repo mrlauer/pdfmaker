@@ -2,8 +2,6 @@ package document
 
 import (
 	"db"
-	"errors"
-	"launchpad.net/mgo"
 	"launchpad.net/mgo/bson"
 )
 
@@ -23,128 +21,68 @@ func (l *Length) SetBSON(raw bson.Raw) error {
 	return err
 }
 
+func (doc Document) ObjectId() db.Id {
+	return doc.Id
+}
+
+func (doc *Document) SetObjectId(id db.Id) {
+	doc.Id = id
+}
+
 func bogusCheck() {
 	var l Length
 	var _ bson.Getter = l
 	var _ bson.Setter = &l
-}
 
-type MongoDBDoc struct {
-	Id  bson.ObjectId `bson:"_id,omitempty"`
-	Doc Document
+	var doc Document
+	var _ db.DBObject = doc
+	var _ db.DBObjectWriter = &doc
 }
 
 type MongoDB struct {
-	Session *mgo.Session
-	DBName  string
+	Database db.DB
 }
 
 func CreateMongoDB(host string, dbname string) (*MongoDB, error) {
-	session, err := mgo.Dial(host)
+	database, err := db.CreateMongoDB(host, dbname)
 	if err != nil {
 		return nil, err
 	}
-	m := &MongoDB{Session: session, DBName: dbname}
-	// Initialize the index for ids
-	idx := mgo.Index{}
-	idx.Key = []string{"-doc.id"}
-	idx.Unique = true
-	m.Documents().EnsureIndex(idx)
-	return m, nil
+	return &MongoDB{database}, nil
 }
 
 func (m *MongoDB) Close() {
-	m.Session.Close()
+	m.Database.Close()
 }
 
-func (m *MongoDB) Database() *mgo.Database {
-	return m.Session.DB(m.DBName)
-}
-
-func (m *MongoDB) Documents() *mgo.Collection {
-	return m.Database().C("documents")
-}
+const docCollection = "documents"
 
 func (m *MongoDB) Count() int {
-	c := m.Documents()
-	n, _ := c.Find(bson.M{}).Count()
-	return n
+	return m.Database.Count(docCollection)
 }
 
 func (m *MongoDB) Add(doc *Document) {
-	// Use optimistic loop strategy. Maybe use a counter instead at some point.
-	c := m.Documents()
-	toadd := MongoDBDoc{Doc: *doc}
-	for true {
-		/*
-			// MapReduce!
-			job := mgo.MapReduce {
-				Map: `function() { 
-					var i = parseInt(this.doc.id); 
-					if(!isNaN(i)) {
-						emit(0, i)
-					}
-				}`,
-				Reduce: `function(key, values) { return Math.max.apply(null, values); }`,
-			}
-			var result []struct{ Id int "_id"; Value int }
-			_, err := c.Find(nil).MapReduce(job, &result)
-			if err != nil {
-				fmt.Printf("MapReduce error: %q\n", err.Error())
-			}
-			id := 1
-			if err == nil && len(result) > 0 {
-				id = result[0].Value + 1
-			}
-			toadd.Doc.Id = MakeDocIdInt(id)
-		*/
-		dbid, err := db.NewId()
-		toadd.Doc.Id = dbid
-		if err != nil {
-			continue
-		}
-		err = c.Insert(&toadd)
-		doc.Id = toadd.Doc.Id
-		if err == nil {
-			return
-		}
-	}
+	m.Database.Add(docCollection, doc)
 }
 
 func (m *MongoDB) Update(doc *Document) error {
-	c := m.Documents()
-	mdoc := MongoDBDoc{Doc: *doc}
-	err := c.Update(bson.M{"doc.id": doc.Id}, &mdoc)
-	// Proper checking?
-	if err != nil {
-		return errors.New("document does not exist")
-	}
-	return nil
+	return m.Database.Update(docCollection, doc)
 }
 
 func (m *MongoDB) Fetch(id db.Id) (Document, error) {
-	c := m.Documents()
-	mdoc := MongoDBDoc{}
-	err := c.Find(bson.M{"doc.id": id}).One(&mdoc)
-	if err != nil {
-		return mdoc.Doc, err
-	}
-	return mdoc.Doc, nil
+	var doc Document
+	err := m.Database.Fetch(docCollection, id, &doc)
+	return doc, err
 }
 
 func (m *MongoDB) Delete(id db.Id) error {
-	c := m.Documents()
-	err := c.Remove(bson.M{"doc.id": id})
-	return err
+	return m.Database.Delete(docCollection, id)
 }
 
 func (m *MongoDB) DeleteAll() error {
-	c := m.Documents()
-	err := c.RemoveAll(bson.M{})
-	return err
+	return m.Database.DeleteAll(docCollection)
 }
 
 func (m *MongoDB) DropDB() error {
-	err := m.Database().DropDatabase()
-	return err
+	return m.Database.DropDB()
 }

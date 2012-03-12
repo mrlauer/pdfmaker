@@ -6,7 +6,7 @@ env.PrependENVPath('GOPATH', thisDir)
 
 db = env.GoInstallPkg('db')
 textproc = env.GoInstallPkg('textproc')
-document = env.GoInstallPkg('local/document')
+document = env.GoInstallPkg('local/document', [db])
 web = env.GoInstallPkg('web')
 exe = env.GoInstall('pdfapp', [document, textproc, web])
 Install(env.subst('$BINDIR'), exe)
@@ -24,6 +24,6 @@ env.AlwaysBuild(testDoc)
 env.AlwaysBuild(testWeb)
 env.AlwaysBuild(testDB)
 env.AlwaysBuild(testApp)
-testAll = env.Alias('TEST', [testDoc, testWeb, testApp])
+testAll = env.Alias('TEST', [testDB, testDoc, testWeb, testApp])
  
 
